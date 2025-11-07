@@ -8,6 +8,7 @@ let dadosSimulados = {
     biblioteca: [
         { id: 1, nome: "video_final_01.mp4", duracao: "10:25", status: "Na Biblioteca" },
         { id: 2, nome: "tutorial_novo_feature.mp4", duracao: "05:12", status: "Agendado" },
+        { id: 3, nome: "video_antigo_01.mp4", duracao: "15:40", status: "Postado" },
     ],
     agendamentosHoje: 1,
     falhas: 0,
@@ -44,15 +45,21 @@ function renderizarTabelaBiblioteca() {
     tbody.innerHTML = '';
 
     dadosSimulados.biblioteca.forEach(video => {
-        const statusClass = video.status === 'Agendado' ? 'status-agendado' : 'status-biblioteca';
+        let statusClass = '';
+        switch (video.status) {
+            case 'Na Biblioteca': statusClass = 'status-biblioteca'; break;
+            case 'Agendado': statusClass = 'status-agendado'; break;
+            case 'Postado': statusClass = 'status-postado'; break;
+        }
+        
         const tr = `
             <tr>
                 <td>${video.nome}</td>
                 <td>${video.duracao}</td>
                 <td><span class="status-badge ${statusClass}">${video.status}</span></td>
                 <td>
-                    <button class="btn-icon" title="Agendar"><i data-feather="calendar"></i></button>
-                    <button class="btn-icon edit-icon" title="Editar Metadados"><i data-feather="align-left"></i></button>
+                    <button class="btn-icon schedule-icon" title="Agendar"><i data-feather="calendar"></i></button>
+                    <button class="btn-icon metadata-icon" title="Editar Metadados"><i data-feather="align-left"></i></button>
                     <button class="btn-icon remove-icon" title="Remover" onclick="removerVideo(${video.id})"><i data-feather="trash-2"></i></button>
                 </td>
             </tr>
@@ -96,10 +103,10 @@ function removerCanal(id) {
 // --- Funções da Biblioteca ---
 
 function simularUpload() {
-    const numeroVideo = dadosSimulados.biblioteca.length > 0 ? Math.max(...dadosSimulados.biblioteca.map(v => v.id)) + 1 : 1;
+    const novoId = dadosSimulados.biblioteca.length > 0 ? Math.max(...dadosSimulados.biblioteca.map(v => v.id)) + 1 : 1;
     const novoVideo = {
-        id: numeroVideo,
-        nome: `novo_video_${String(numeroVideo).padStart(2, '0')}.mp4`,
+        id: novoId,
+        nome: `novo_video_${String(novoId).padStart(2, '0')}.mp4`,
         duracao: `${Math.floor(Math.random() * 10 + 5)}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}`,
         status: "Na Biblioteca"
     };
@@ -113,7 +120,7 @@ function removerVideo(id) {
     if (confirm("Tem certeza que deseja remover este vídeo da biblioteca?")) {
         dadosSimulados.biblioteca = dadosSimulados.biblioteca.filter(video => video.id !== id);
         renderizarTabelaBiblioteca();
-        renderizarDashboard(); // Atualiza o card no dashboard
+        renderizarDashboard();
     }
 }
 

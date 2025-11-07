@@ -176,11 +176,14 @@ body {
 }
 
 /* Cores dos Ícones de Ação */
-.btn-icon.edit-icon i {
+.btn-icon.edit-icon i, .btn-icon.metadata-icon i {
     color: var(--cor-amarelo);
 }
 .btn-icon.remove-icon i {
     color: var(--cor-vermelho);
+}
+.btn-icon.schedule-icon i {
+    color: var(--cor-azul-primario);
 }
 
 
@@ -288,6 +291,11 @@ tbody tr:hover {
 .status-agendado {
     background-color: rgba(245, 158, 11, 0.2);
     color: var(--cor-amarelo);
+}
+
+.status-postado {
+    background-color: rgba(34, 197, 94, 0.2);
+    color: var(--cor-verde);
 }
 
 
