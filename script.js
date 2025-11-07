@@ -58,14 +58,10 @@ function navigateTo(pageId) {
 // --- Funções de CRUD (Create, Read, Update, Delete) para Canais ---
 
 function removerCanal(id) {
-    // Pede confirmação ao usuário
     const confirmacao = confirm("Tem certeza que deseja remover este canal?");
-
     if (confirmacao) {
-        // Filtra o array, mantendo apenas os canais com ID diferente
         dadosSimulados.canais = dadosSimulados.canais.filter(canal => canal.id !== id);
-        console.log(`Canal com ID ${id} removido.`);
-        renderizarDashboard(); // Atualiza o dashboard e a tabela
+        renderizarDashboard();
     }
 }
 
@@ -79,7 +75,7 @@ const channelEditId = document.getElementById('channel-edit-id');
 function openModalForNew() {
     channelForm.reset();
     modalTitle.textContent = "Adicionar Novo Canal";
-    channelEditId.value = ""; // Garante que não estamos em modo de edição
+    channelEditId.value = "";
     modal.classList.remove('hidden');
 }
 
@@ -99,24 +95,19 @@ function closeModal() {
     channelForm.reset();
 }
 
-// Lógica para salvar (adicionar ou editar)
 channelForm.addEventListener('submit', (event) => {
     event.preventDefault();
-
     const nome = document.getElementById('channel-name').value;
     const youtubeId = document.getElementById('channel-id').value;
     const idParaEditar = parseInt(channelEditId.value);
 
     if (idParaEditar) {
-        // Modo Edição
         const index = dadosSimulados.canais.findIndex(c => c.id === idParaEditar);
         if (index !== -1) {
             dadosSimulados.canais[index].nome = nome;
             dadosSimulados.canais[index].youtubeId = youtubeId;
-            console.log("Canal editado:", dadosSimulados.canais[index]);
         }
     } else {
-        // Modo Adição
         const novoId = dadosSimulados.canais.length > 0 ? Math.max(...dadosSimulados.canais.map(c => c.id)) + 1 : 1;
         const newChannel = {
             id: novoId,
@@ -126,14 +117,11 @@ channelForm.addEventListener('submit', (event) => {
             status: "Ativo"
         };
         dadosSimulados.canais.push(newChannel);
-        console.log("Novo canal adicionado:", newChannel);
     }
-
     renderizarDashboard();
     closeModal();
 });
 
-// Fecha o modal se clicar fora do conteúdo
 modal.addEventListener('click', (event) => {
     if (event.target === modal) {
         closeModal();
@@ -143,6 +131,12 @@ modal.addEventListener('click', (event) => {
 // --- Inicialização ---
 
 document.addEventListener('DOMContentLoaded', () => {
+    // CORREÇÃO: Atribui a função correta ao botão principal
+    const addChannelButton = document.querySelector('.main-header .btn-primary');
+    if (addChannelButton) {
+        addChannelButton.setAttribute('onclick', 'openModalForNew()');
+    }
+
     navigateTo('dashboard');
     renderizarDashboard();
     feather.replace();
