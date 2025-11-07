@@ -17,7 +17,6 @@
             </div>
             <ul class="nav-menu">
                 <li><a href="#" class="nav-link active" onclick="navigateTo('dashboard' )"><i data-feather="home"></i><span>Dashboard</span></a></li>
-                <li><a href="#" class="nav-link" onclick="navigateTo('channels')"><i data-feather="tv"></i><span>Canais</span></a></li>
                 <li><a href="#" class="nav-link" onclick="navigateTo('library')"><i data-feather="film"></i><span>Biblioteca</span></a></li>
                 <li><a href="#" class="nav-link" onclick="navigateTo('calendar')"><i data-feather="calendar"></i><span>Calendário</span></a></li>
                 <li><a href="#" class="nav-link" onclick="navigateTo('settings')"><i data-feather="settings"></i><span>Configurações</span></a></li>
@@ -41,7 +40,7 @@
                         </div>
                     </div>
                     <div class="stat-card">
-                        <div class="stat-icon" style="background-color: #27ae60;"><i data-feather="check-circle"></i></div>
+                        <div class="stat-icon" style="background-color: #27ae60;"><i data-feather="film"></i></div>
                         <div class="stat-info">
                             <span class="stat-title">Vídeos na Biblioteca</span>
                             <span class="stat-value" id="stat-videos-biblioteca">0</span>
@@ -75,16 +74,39 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                <!-- Linhas de canais serão inseridas aqui pelo JavaScript -->
+                                <!-- Linhas de canais serão inseridas aqui -->
                             </tbody>
                         </table>
                     </div>
                 </div>
             </section>
 
-            <!-- Outras seções (Canais, Biblioteca, etc.) podem ser adicionadas aqui -->
-            <section id="channels" class="page"></section>
-            <section id="library" class="page"></section>
+            <!-- Seção da Biblioteca -->
+            <section id="library" class="page">
+                <div class="main-header">
+                    <h1>Biblioteca de Mídia</h1>
+                    <button class="btn btn-primary" onclick="simularUpload()"><i data-feather="upload-cloud"></i> Fazer Upload de Vídeos</button>
+                </div>
+                <div class="content-section">
+                    <h2>Backlog de Vídeos</h2>
+                    <div class="table-container">
+                        <table id="library-table">
+                            <thead>
+                                <tr>
+                                    <th>Nome do Arquivo</th>
+                                    <th>Duração</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Linhas de vídeos serão inseridas aqui -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
             <section id="calendar" class="page"></section>
             <section id="settings" class="page"></section>
         </main>

@@ -269,6 +269,17 @@ tbody tr:hover {
     color: var(--cor-vermelho);
 }
 
+.status-biblioteca {
+    background-color: rgba(59, 130, 246, 0.2);
+    color: var(--cor-azul-primario);
+}
+
+.status-agendado {
+    background-color: rgba(245, 158, 11, 0.2);
+    color: var(--cor-amarelo);
+}
+
+
 /* --- Estilos do Modal (Pop-up) --- */
 .modal-backdrop {
     position: fixed;

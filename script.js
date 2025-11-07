@@ -17,7 +17,8 @@ let dadosSimulados = {
 
 function renderizarTabelaCanais() {
     const tbody = document.querySelector("#canais-table-dashboard tbody");
-    tbody.innerHTML = ''; // Limpa a tabela antes de redesenhar
+    if (!tbody) return;
+    tbody.innerHTML = '';
 
     dadosSimulados.canais.forEach(canal => {
         const statusClass = canal.status === 'Ativo' ? 'status-ativo' : 'status-inativo';
@@ -34,7 +35,31 @@ function renderizarTabelaCanais() {
         `;
         tbody.innerHTML += tr;
     });
-    feather.replace(); // Re-aplica os ícones
+    feather.replace();
+}
+
+function renderizarTabelaBiblioteca() {
+    const tbody = document.querySelector("#library-table tbody");
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    dadosSimulados.biblioteca.forEach(video => {
+        const statusClass = video.status === 'Agendado' ? 'status-agendado' : 'status-biblioteca';
+        const tr = `
+            <tr>
+                <td>${video.nome}</td>
+                <td>${video.duracao}</td>
+                <td><span class="status-badge ${statusClass}">${video.status}</span></td>
+                <td>
+                    <button class="btn-icon" title="Agendar"><i data-feather="calendar"></i></button>
+                    <button class="btn-icon" title="Editar Metadados"><i data-feather="align-left"></i></button>
+                    <button class="btn-icon" title="Remover"><i data-feather="trash-2"></i></button>
+                </td>
+            </tr>
+        `;
+        tbody.innerHTML += tr;
+    });
+    feather.replace();
 }
 
 function renderizarDashboard() {
@@ -53,17 +78,38 @@ function navigateTo(pageId) {
 
     document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
     document.querySelector(`.nav-link[onclick="navigateTo('${pageId}')"]`).classList.add('active');
+
+    // Renderiza a tabela correta ao navegar
+    if (pageId === 'library') {
+        renderizarTabelaBiblioteca();
+    }
 }
 
-// --- Funções de CRUD (Create, Read, Update, Delete) para Canais ---
+// --- Funções CRUD para Canais ---
 
 function removerCanal(id) {
-    const confirmacao = confirm("Tem certeza que deseja remover este canal?");
-    if (confirmacao) {
+    if (confirm("Tem certeza que deseja remover este canal?")) {
         dadosSimulados.canais = dadosSimulados.canais.filter(canal => canal.id !== id);
         renderizarDashboard();
     }
 }
+
+// --- Funções da Biblioteca ---
+
+function simularUpload() {
+    const numeroVideo = dadosSimulados.biblioteca.length + 1;
+    const novoVideo = {
+        id: numeroVideo,
+        nome: `novo_video_${String(numeroVideo).padStart(2, '0')}.mp4`,
+        duracao: `${Math.floor(Math.random() * 10 + 5)}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}`,
+        status: "Na Biblioteca"
+    };
+    dadosSimulados.biblioteca.push(novoVideo);
+    renderizarTabelaBiblioteca();
+    renderizarDashboard(); // Atualiza o card no dashboard
+    alert(`Simulação: "${novoVideo.nome}" foi adicionado à biblioteca!`);
+}
+
 
 // --- Funções do Modal (Pop-up) ---
 
@@ -131,7 +177,6 @@ modal.addEventListener('click', (event) => {
 // --- Inicialização ---
 
 document.addEventListener('DOMContentLoaded', () => {
-    // CORREÇÃO: Atribui a função correta ao botão principal
     const addChannelButton = document.querySelector('.main-header .btn-primary');
     if (addChannelButton) {
         addChannelButton.setAttribute('onclick', 'openModalForNew()');
