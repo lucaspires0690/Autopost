@@ -4,110 +4,118 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Autopost - Painel de Controle</title>
-    <!-- Ícones (Feather Icons) -->
-    <script src="https://unpkg.com/feather-icons"></script>
-    <!-- Nosso arquivo de estilos -->
     <link rel="stylesheet" href="style.css">
+    <script src="https://unpkg.com/feather-icons"></script>
 </head>
 <body>
-
-    <!-- Menu Lateral -->
-    <div class="sidebar">
-        <div class="sidebar-header"><i data-feather="youtube"></i><span>Autopost</span></div>
-        <nav class="sidebar-nav">
-            <a href="#dashboard" class="nav-link active" onclick="navigateTo('dashboard' )"><i data-feather="home"></i>Dashboard</a>
-            <a href="#canais" class="nav-link" onclick="navigateTo('canais')"><i data-feather="tv"></i>Canais</a>
-            <a href="#biblioteca" class="nav-link" onclick="navigateTo('biblioteca')"><i data-feather="film"></i>Biblioteca</a>
+    <div class="container">
+        <!-- Menu Lateral -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <i data-feather="youtube" class="logo-icon"></i>
+                <span class="logo-text">Autopost</span>
+            </div>
+            <ul class="nav-menu">
+                <li><a href="#" class="nav-link active" onclick="navigateTo('dashboard' )"><i data-feather="home"></i><span>Dashboard</span></a></li>
+                <li><a href="#" class="nav-link" onclick="navigateTo('channels')"><i data-feather="tv"></i><span>Canais</span></a></li>
+                <li><a href="#" class="nav-link" onclick="navigateTo('library')"><i data-feather="film"></i><span>Biblioteca</span></a></li>
+                <li><a href="#" class="nav-link" onclick="navigateTo('calendar')"><i data-feather="calendar"></i><span>Calendário</span></a></li>
+                <li><a href="#" class="nav-link" onclick="navigateTo('settings')"><i data-feather="settings"></i><span>Configurações</span></a></li>
+            </ul>
         </nav>
-    </div>
 
-    <!-- Conteúdo Principal -->
-    <div class="main-content">
-        <!-- PÁGINA 1: DASHBOARD -->
-        <div id="dashboard" class="page active">
-            <div class="page-header"><h1>Dashboard</h1></div>
-            <div class="stats-grid">
-                <div class="card stat-card" onclick="openModal('modal-falhas')">
-                    <div class="icon-wrapper danger"><i data-feather="alert-triangle"></i></div>
-                    <div>
-                        <div class="value" id="stat-erros">1</div>
-                        <div class="label">Falhas no Upload</div>
+        <!-- Conteúdo Principal -->
+        <main class="main-content">
+            <!-- Seção do Dashboard -->
+            <section id="dashboard" class="page active">
+                <div class="main-header">
+                    <h1>Dashboard</h1>
+                    <button class="btn btn-primary" onclick="openModal()"><i data-feather="plus-circle"></i> Adicionar Novo Canal</button>
+                </div>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background-color: #2980b9;"><i data-feather="tv"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-title">Canais Ativos</span>
+                            <span class="stat-value" id="stat-canais-ativos">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background-color: #27ae60;"><i data-feather="check-circle"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-title">Vídeos na Biblioteca</span>
+                            <span class="stat-value" id="stat-videos-biblioteca">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background-color: #f39c12;"><i data-feather="clock"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-title">Agendados para Hoje</span>
+                            <span class="stat-value" id="stat-agendados-hoje">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background-color: #c0392b;"><i data-feather="alert-triangle"></i></div>
+                        <div class="stat-info">
+                            <span class="stat-title">Falhas de Upload</span>
+                            <span class="stat-value" id="stat-falhas-upload">0</span>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <!-- PÁGINA 2: GERENCIAMENTO DE CANAIS -->
-        <div id="canais" class="page">
-            <div class="page-header"><h1>Meus Canais</h1><button class="btn btn-primary" onclick="alert('Simulação: Abrir formulário para adicionar novo canal.')"><i data-feather="plus"></i>Adicionar Canal</button></div>
-            <div class="card">
-                <table id="tabela-canais">
-                    <thead><tr><th>Canal</th><th>Status</th><th>Ações</th></tr></thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- PÁGINA 3: DETALHES DO CANAL -->
-        <div id="detalhes-canal" class="page">
-            <div class="page-header">
-                <h1 id="nome-canal-detalhes"></h1>
-                <div>
-                    <button class="btn btn-secondary" onclick="navigateTo('canais')"><i data-feather="arrow-left"></i>Voltar</button>
-                    <button class="btn btn-primary" onclick="openModal('modal-selecionar-video')"><i data-feather="plus-circle"></i>Agendar do Backlog</button>
+                <div class="content-section">
+                    <h2>Visão Geral dos Canais</h2>
+                    <div class="table-container">
+                        <table id="canais-table-dashboard">
+                            <thead>
+                                <tr>
+                                    <th>Nome do Canal</th>
+                                    <th>Próxima Postagem</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Linhas de canais serão inseridas aqui pelo JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
-            <div class="card">
-                <h2>Conteúdo do Canal</h2>
-                <table id="tabela-backlog">
-                    <thead><tr><th>Título</th><th>Status</th><th>Data</th><th>Ações</th></tr></thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
+            </section>
 
-        <!-- PÁGINA 4: BIBLIOTECA DE MÍDIA (BACKLOG) -->
-        <div id="biblioteca" class="page">
-            <div class="page-header"><h1>Biblioteca de Mídia</h1><button class="btn btn-primary"><i data-feather="upload"></i>Fazer Upload de Vídeos</button></div>
-            <div class="card">
-                <h2>Vídeos Disponíveis</h2>
-                <div id="grid-biblioteca" class="media-grid"></div>
-            </div>
-        </div>
+            <!-- Outras seções (Canais, Biblioteca, etc.) podem ser adicionadas aqui -->
+            <section id="channels" class="page"></section>
+            <section id="library" class="page"></section>
+            <section id="calendar" class="page"></section>
+            <section id="settings" class="page"></section>
+        </main>
     </div>
 
-    <!-- MODAIS -->
-    <div id="modal-falhas" class="modal">
+    <!-- Modal (Pop-up) para Adicionar Canal -->
+    <div id="add-channel-modal" class="modal-backdrop hidden">
         <div class="modal-content">
-            <div class="modal-header"><h2>Vídeos com Falha no Upload</h2><i class="close-btn" data-feather="x" onclick="closeModal('modal-falhas')"></i></div>
-            <table id="tabela-falhas">
-                <thead><tr><th>Canal</th><th>Título</th><th>Ações</th></tr></thead>
-                <tbody></tbody>
-            </table>
-        </div>
-    </div>
-    <div id="modal-selecionar-video" class="modal">
-        <div class="modal-content">
-            <div class="modal-header"><h2>Selecione um Vídeo da Biblioteca</h2><i class="close-btn" data-feather="x" onclick="closeModal('modal-selecionar-video')"></i></div>
-            <div id="grid-selecao-video" class="media-grid"></div>
-            <div style="text-align: right; margin-top: 20px;">
-                <button class="btn btn-primary" onclick="abrirFormularioAgendamento()">Avançar</button>
+            <div class="modal-header">
+                <h2>Adicionar Novo Canal</h2>
+                <button onclick="closeModal()" class="close-button">&times;</button>
             </div>
-        </div>
-    </div>
-    <div id="modal-agendar-video" class="modal">
-        <div class="modal-content">
-            <div class="modal-header"><h2 id="modal-agendar-titulo">Agendar Vídeo</h2><i class="close-btn" data-feather="x" onclick="closeModal('modal-agendar-video')"></i></div>
-            <form id="form-agendar-video" onsubmit="agendarVideo(event)">
-                <div class="form-group"><label>Vídeo Selecionado:</label><p id="video-selecionado-nome" style="font-weight: bold;"></p></div>
-                <div class="form-group"><label for="titulo-video">Título</label><input type="text" id="titulo-video" required></div>
-                <div class="form-group"><label for="data-agendamento">Data e Hora</label><input type="datetime-local" id="data-agendamento" required></div>
-                <button type="submit" class="btn btn-primary" style="width: 100%;"><i data-feather="check"></i>Confirmar Agendamento</button>
-            </form>
+            <div class="modal-body">
+                <form id="add-channel-form">
+                    <div class="form-group">
+                        <label for="channel-name">Nome do Canal</label>
+                        <input type="text" id="channel-name" placeholder="Ex: Canal de Culinária" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="channel-id">ID do Canal no YouTube</label>
+                        <input type="text" id="channel-id" placeholder="Ex: UC_x5XG1OV2P6uZZ5FSM9Ttw" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" onclick="closeModal()" class="btn btn-secondary">Cancelar</button>
+                <button type="submit" form="add-channel-form" class="btn btn-primary">Salvar Canal</button>
+            </div>
         </div>
     </div>
 
-    <!-- Nosso arquivo de script -->
     <script src="script.js"></script>
 </body>
 </html>
