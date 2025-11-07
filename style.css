@@ -377,7 +377,7 @@ tbody tr:hover {
     color: var(--cor-secundaria);
 }
 
-.form-group input {
+.form-group input, .form-group select {
     width: 100%;
     padding: 12px;
     background-color: var(--cor-sidebar);
@@ -388,7 +388,7 @@ tbody tr:hover {
     transition: border-color 0.2s, box-shadow 0.2s;
 }
 
-.form-group input:focus {
+.form-group input:focus, .form-group select:focus {
     outline: none;
     border-color: var(--cor-azul-primario);
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);

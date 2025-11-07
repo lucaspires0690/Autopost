@@ -127,7 +127,10 @@ function removerVideo(id) {
 // --- Funções dos Modais (Pop-ups) ---
 
 function closeModal(modalId) {
-    document.getElementById(modalId).classList.add('hidden');
+    const modal = document.getElementById(modalId);
+    if (modal) {
+        modal.classList.add('hidden');
+    }
 }
 
 // Modal de Canais
@@ -183,11 +186,9 @@ function openScheduleModal(videoId) {
     const video = dadosSimulados.biblioteca.find(v => v.id === videoId);
     if (!video) return;
 
-    // Preenche o nome do vídeo
     document.getElementById('schedule-video-name').textContent = video.nome;
     document.getElementById('schedule-video-id').value = video.id;
 
-    // Preenche a lista de canais
     const channelSelect = document.getElementById('schedule-channel');
     channelSelect.innerHTML = '<option value="">Selecione um canal...</option>';
     dadosSimulados.canais
@@ -197,7 +198,6 @@ function openScheduleModal(videoId) {
             channelSelect.innerHTML += option;
         });
     
-    // Abre o modal
     scheduleModal.classList.remove('hidden');
 }
 
