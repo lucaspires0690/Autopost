@@ -165,13 +165,24 @@ body {
     background: none;
     padding: 5px;
     border-radius: 50%;
+    transition: background-color 0.2s;
 }
 .btn-icon:hover {
     background-color: var(--cor-fundo);
 }
 .btn-icon i {
     color: var(--cor-secundaria);
+    transition: color 0.2s;
 }
+
+/* Cores dos Ícones de Ação */
+.btn-icon.edit-icon i {
+    color: var(--cor-amarelo);
+}
+.btn-icon.remove-icon i {
+    color: var(--cor-vermelho);
+}
+
 
 /* --- Cards de Estatísticas --- */
 .stats-grid {

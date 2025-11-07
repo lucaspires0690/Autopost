@@ -28,8 +28,8 @@ function renderizarTabelaCanais() {
                 <td>Hoje às ${canal.horario}</td>
                 <td><span class="status-badge ${statusClass}">${canal.status}</span></td>
                 <td>
-                    <button class="btn-icon" title="Editar" onclick="openModalForEdit(${canal.id})"><i data-feather="edit-2"></i></button>
-                    <button class="btn-icon" title="Remover" onclick="removerCanal(${canal.id})"><i data-feather="trash-2"></i></button>
+                    <button class="btn-icon edit-icon" title="Editar" onclick="openModalForEdit(${canal.id})"><i data-feather="edit-2"></i></button>
+                    <button class="btn-icon remove-icon" title="Remover" onclick="removerCanal(${canal.id})"><i data-feather="trash-2"></i></button>
                 </td>
             </tr>
         `;
@@ -52,8 +52,8 @@ function renderizarTabelaBiblioteca() {
                 <td><span class="status-badge ${statusClass}">${video.status}</span></td>
                 <td>
                     <button class="btn-icon" title="Agendar"><i data-feather="calendar"></i></button>
-                    <button class="btn-icon" title="Editar Metadados"><i data-feather="align-left"></i></button>
-                    <button class="btn-icon" title="Remover"><i data-feather="trash-2"></i></button>
+                    <button class="btn-icon edit-icon" title="Editar Metadados"><i data-feather="align-left"></i></button>
+                    <button class="btn-icon remove-icon" title="Remover" onclick="removerVideo(${video.id})"><i data-feather="trash-2"></i></button>
                 </td>
             </tr>
         `;
@@ -79,7 +79,6 @@ function navigateTo(pageId) {
     document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
     document.querySelector(`.nav-link[onclick="navigateTo('${pageId}')"]`).classList.add('active');
 
-    // Renderiza a tabela correta ao navegar
     if (pageId === 'library') {
         renderizarTabelaBiblioteca();
     }
@@ -97,7 +96,7 @@ function removerCanal(id) {
 // --- Funções da Biblioteca ---
 
 function simularUpload() {
-    const numeroVideo = dadosSimulados.biblioteca.length + 1;
+    const numeroVideo = dadosSimulados.biblioteca.length > 0 ? Math.max(...dadosSimulados.biblioteca.map(v => v.id)) + 1 : 1;
     const novoVideo = {
         id: numeroVideo,
         nome: `novo_video_${String(numeroVideo).padStart(2, '0')}.mp4`,
@@ -106,10 +105,17 @@ function simularUpload() {
     };
     dadosSimulados.biblioteca.push(novoVideo);
     renderizarTabelaBiblioteca();
-    renderizarDashboard(); // Atualiza o card no dashboard
+    renderizarDashboard();
     alert(`Simulação: "${novoVideo.nome}" foi adicionado à biblioteca!`);
 }
 
+function removerVideo(id) {
+    if (confirm("Tem certeza que deseja remover este vídeo da biblioteca?")) {
+        dadosSimulados.biblioteca = dadosSimulados.biblioteca.filter(video => video.id !== id);
+        renderizarTabelaBiblioteca();
+        renderizarDashboard(); // Atualiza o card no dashboard
+    }
+}
 
 // --- Funções do Modal (Pop-up) ---
 
@@ -177,7 +183,7 @@ modal.addEventListener('click', (event) => {
 // --- Inicialização ---
 
 document.addEventListener('DOMContentLoaded', () => {
-    const addChannelButton = document.querySelector('.main-header .btn-primary');
+    const addChannelButton = document.querySelector('#dashboard .main-header .btn-primary');
     if (addChannelButton) {
         addChannelButton.setAttribute('onclick', 'openModalForNew()');
     }
