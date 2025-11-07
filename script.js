@@ -23,6 +23,7 @@ function renderizarTabelaCanais() {
 
     dadosSimulados.canais.forEach(canal => {
         const statusClass = canal.status === 'Ativo' ? 'status-ativo' : 'status-inativo';
+        // CORREÇÃO APLICADA AQUI: Adicionadas as classes 'edit-icon' e 'remove-icon'
         const tr = `
             <tr>
                 <td>${canal.nome}</td>
@@ -88,6 +89,9 @@ function navigateTo(pageId) {
 
     if (pageId === 'library') {
         renderizarTabelaBiblioteca();
+    }
+    if (pageId === 'dashboard') {
+        renderizarTabelaCanais();
     }
 }
 
