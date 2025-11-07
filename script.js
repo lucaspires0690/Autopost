@@ -1,9 +1,9 @@
 // --- Dados Simulados Iniciais ---
-const dadosSimulados = {
+let dadosSimulados = {
     canais: [
-        { id: 1, nome: "Canal Principal", horario: "09:00", status: "Ativo" },
-        { id: 2, nome: "Canal de Cortes", horario: "12:00", status: "Ativo" },
-        { id: 3, nome: "Canal de Testes", horario: "15:00", status: "Inativo" },
+        { id: 1, nome: "Canal Principal", youtubeId: "UC_x5XG1OV2P6uZZ5FSM9Ttw", horario: "09:00", status: "Ativo" },
+        { id: 2, nome: "Canal de Cortes", youtubeId: "UC_anotherone", horario: "12:00", status: "Ativo" },
+        { id: 3, nome: "Canal de Testes", youtubeId: "UC_andanother", horario: "15:00", status: "Inativo" },
     ],
     biblioteca: [
         { id: 1, nome: "video_final_01.mp4", duracao: "10:25", status: "Na Biblioteca" },
@@ -27,8 +27,8 @@ function renderizarTabelaCanais() {
                 <td>Hoje às ${canal.horario}</td>
                 <td><span class="status-badge ${statusClass}">${canal.status}</span></td>
                 <td>
-                    <button class="btn-icon" title="Editar"><i data-feather="edit-2"></i></button>
-                    <button class="btn-icon" title="Remover"><i data-feather="trash-2"></i></button>
+                    <button class="btn-icon" title="Editar" onclick="openModalForEdit(${canal.id})"><i data-feather="edit-2"></i></button>
+                    <button class="btn-icon" title="Remover" onclick="removerCanal(${canal.id})"><i data-feather="trash-2"></i></button>
                 </td>
             </tr>
         `;
@@ -55,40 +55,82 @@ function navigateTo(pageId) {
     document.querySelector(`.nav-link[onclick="navigateTo('${pageId}')"]`).classList.add('active');
 }
 
+// --- Funções de CRUD (Create, Read, Update, Delete) para Canais ---
+
+function removerCanal(id) {
+    // Pede confirmação ao usuário
+    const confirmacao = confirm("Tem certeza que deseja remover este canal?");
+
+    if (confirmacao) {
+        // Filtra o array, mantendo apenas os canais com ID diferente
+        dadosSimulados.canais = dadosSimulados.canais.filter(canal => canal.id !== id);
+        console.log(`Canal com ID ${id} removido.`);
+        renderizarDashboard(); // Atualiza o dashboard e a tabela
+    }
+}
+
 // --- Funções do Modal (Pop-up) ---
 
-const modal = document.getElementById('add-channel-modal');
-const addChannelForm = document.getElementById('add-channel-form');
+const modal = document.getElementById('channel-modal');
+const channelForm = document.getElementById('channel-form');
+const modalTitle = document.getElementById('modal-title');
+const channelEditId = document.getElementById('channel-edit-id');
 
-function openModal() {
+function openModalForNew() {
+    channelForm.reset();
+    modalTitle.textContent = "Adicionar Novo Canal";
+    channelEditId.value = ""; // Garante que não estamos em modo de edição
     modal.classList.remove('hidden');
+}
+
+function openModalForEdit(id) {
+    const canalParaEditar = dadosSimulados.canais.find(canal => canal.id === id);
+    if (canalParaEditar) {
+        modalTitle.textContent = "Editar Canal";
+        channelEditId.value = id;
+        document.getElementById('channel-name').value = canalParaEditar.nome;
+        document.getElementById('channel-id').value = canalParaEditar.youtubeId;
+        modal.classList.remove('hidden');
+    }
 }
 
 function closeModal() {
     modal.classList.add('hidden');
-    addChannelForm.reset(); // Limpa o formulário ao fechar
+    channelForm.reset();
 }
 
-// Lógica para salvar o novo canal (simulação)
-addChannelForm.addEventListener('submit', (event) => {
-    event.preventDefault(); // Impede o recarregamento da página
+// Lógica para salvar (adicionar ou editar)
+channelForm.addEventListener('submit', (event) => {
+    event.preventDefault();
 
-    const channelName = document.getElementById('channel-name').value;
-    const channelId = document.getElementById('channel-id').value;
+    const nome = document.getElementById('channel-name').value;
+    const youtubeId = document.getElementById('channel-id').value;
+    const idParaEditar = parseInt(channelEditId.value);
 
-    const newChannel = {
-        id: dadosSimulados.canais.length + 1,
-        nome: channelName,
-        horario: "N/A", // Novo canal ainda não tem horário definido
-        status: "Ativo"
-    };
-    dadosSimulados.canais.push(newChannel);
+    if (idParaEditar) {
+        // Modo Edição
+        const index = dadosSimulados.canais.findIndex(c => c.id === idParaEditar);
+        if (index !== -1) {
+            dadosSimulados.canais[index].nome = nome;
+            dadosSimulados.canais[index].youtubeId = youtubeId;
+            console.log("Canal editado:", dadosSimulados.canais[index]);
+        }
+    } else {
+        // Modo Adição
+        const novoId = dadosSimulados.canais.length > 0 ? Math.max(...dadosSimulados.canais.map(c => c.id)) + 1 : 1;
+        const newChannel = {
+            id: novoId,
+            nome: nome,
+            youtubeId: youtubeId,
+            horario: "N/A",
+            status: "Ativo"
+        };
+        dadosSimulados.canais.push(newChannel);
+        console.log("Novo canal adicionado:", newChannel);
+    }
 
-    console.log("Novo canal adicionado (simulação):", newChannel);
-    console.log("ID do YouTube (não usado ainda):", channelId);
-
-    renderizarTabelaCanais(); // Re-desenha a tabela com o novo canal
-    closeModal(); // Fecha o pop-up
+    renderizarDashboard();
+    closeModal();
 });
 
 // Fecha o modal se clicar fora do conteúdo
@@ -97,7 +139,6 @@ modal.addEventListener('click', (event) => {
         closeModal();
     }
 });
-
 
 // --- Inicialização ---
 

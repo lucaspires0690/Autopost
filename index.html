@@ -30,7 +30,7 @@
             <section id="dashboard" class="page active">
                 <div class="main-header">
                     <h1>Dashboard</h1>
-                    <button class="btn btn-primary" onclick="openModal()"><i data-feather="plus-circle"></i> Adicionar Novo Canal</button>
+                    <button class="btn btn-primary" onclick="openModalForNew()"><i data-feather="plus-circle"></i> Adicionar Novo Canal</button>
                 </div>
                 <div class="stats-grid">
                     <div class="stat-card">
@@ -90,15 +90,16 @@
         </main>
     </div>
 
-    <!-- Modal (Pop-up) para Adicionar Canal -->
-    <div id="add-channel-modal" class="modal-backdrop hidden">
+    <!-- Modal (Pop-up) para Adicionar/Editar Canal -->
+    <div id="channel-modal" class="modal-backdrop hidden">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Adicionar Novo Canal</h2>
+                <h2 id="modal-title">Adicionar Novo Canal</h2>
                 <button onclick="closeModal()" class="close-button">&times;</button>
             </div>
             <div class="modal-body">
-                <form id="add-channel-form">
+                <form id="channel-form">
+                    <input type="hidden" id="channel-edit-id">
                     <div class="form-group">
                         <label for="channel-name">Nome do Canal</label>
                         <input type="text" id="channel-name" placeholder="Ex: Canal de Culinária" required>
@@ -111,7 +112,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" onclick="closeModal()" class="btn btn-secondary">Cancelar</button>
-                <button type="submit" form="add-channel-form" class="btn btn-primary">Salvar Canal</button>
+                <button type="submit" form="channel-form" class="btn btn-primary">Salvar</button>
             </div>
         </div>
     </div>
