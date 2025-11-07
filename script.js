@@ -29,7 +29,7 @@ function renderizarTabelaCanais() {
                 <td>Hoje às ${canal.horario}</td>
                 <td><span class="status-badge ${statusClass}">${canal.status}</span></td>
                 <td>
-                    <button class="btn-icon edit-icon" title="Editar" onclick="openModalForEdit(${canal.id})"><i data-feather="edit-2"></i></button>
+                    <button class="btn-icon edit-icon" title="Editar" onclick="openChannelModalForEdit(${canal.id})"><i data-feather="edit-2"></i></button>
                     <button class="btn-icon remove-icon" title="Remover" onclick="removerCanal(${canal.id})"><i data-feather="trash-2"></i></button>
                 </td>
             </tr>
@@ -58,7 +58,7 @@ function renderizarTabelaBiblioteca() {
                 <td>${video.duracao}</td>
                 <td><span class="status-badge ${statusClass}">${video.status}</span></td>
                 <td>
-                    <button class="btn-icon schedule-icon" title="Agendar"><i data-feather="calendar"></i></button>
+                    <button class="btn-icon schedule-icon" title="Agendar" onclick="openScheduleModal(${video.id})"><i data-feather="calendar"></i></button>
                     <button class="btn-icon metadata-icon" title="Editar Metadados"><i data-feather="align-left"></i></button>
                     <button class="btn-icon remove-icon" title="Remover" onclick="removerVideo(${video.id})"><i data-feather="trash-2"></i></button>
                 </td>
@@ -124,34 +124,34 @@ function removerVideo(id) {
     }
 }
 
-// --- Funções do Modal (Pop-up) ---
+// --- Funções dos Modais (Pop-ups) ---
 
-const modal = document.getElementById('channel-modal');
-const channelForm = document.getElementById('channel-form');
-const modalTitle = document.getElementById('modal-title');
-const channelEditId = document.getElementById('channel-edit-id');
-
-function openModalForNew() {
-    channelForm.reset();
-    modalTitle.textContent = "Adicionar Novo Canal";
-    channelEditId.value = "";
-    modal.classList.remove('hidden');
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.add('hidden');
 }
 
-function openModalForEdit(id) {
+// Modal de Canais
+const channelModal = document.getElementById('channel-modal');
+const channelForm = document.getElementById('channel-form');
+const channelModalTitle = document.getElementById('channel-modal-title');
+const channelEditId = document.getElementById('channel-edit-id');
+
+function openChannelModalForNew() {
+    channelForm.reset();
+    channelModalTitle.textContent = "Adicionar Novo Canal";
+    channelEditId.value = "";
+    channelModal.classList.remove('hidden');
+}
+
+function openChannelModalForEdit(id) {
     const canalParaEditar = dadosSimulados.canais.find(canal => canal.id === id);
     if (canalParaEditar) {
-        modalTitle.textContent = "Editar Canal";
+        channelModalTitle.textContent = "Editar Canal";
         channelEditId.value = id;
         document.getElementById('channel-name').value = canalParaEditar.nome;
         document.getElementById('channel-id').value = canalParaEditar.youtubeId;
-        modal.classList.remove('hidden');
+        channelModal.classList.remove('hidden');
     }
-}
-
-function closeModal() {
-    modal.classList.add('hidden');
-    channelForm.reset();
 }
 
 channelForm.addEventListener('submit', (event) => {
@@ -168,33 +168,73 @@ channelForm.addEventListener('submit', (event) => {
         }
     } else {
         const novoId = dadosSimulados.canais.length > 0 ? Math.max(...dadosSimulados.canais.map(c => c.id)) + 1 : 1;
-        const newChannel = {
-            id: novoId,
-            nome: nome,
-            youtubeId: youtubeId,
-            horario: "N/A",
-            status: "Ativo"
-        };
+        const newChannel = { id: novoId, nome, youtubeId, horario: "N/A", status: "Ativo" };
         dadosSimulados.canais.push(newChannel);
     }
     renderizarDashboard();
-    closeModal();
+    closeModal('channel-modal');
 });
 
-modal.addEventListener('click', (event) => {
-    if (event.target === modal) {
-        closeModal();
+// Modal de Agendamento
+const scheduleModal = document.getElementById('schedule-modal');
+const scheduleForm = document.getElementById('schedule-form');
+
+function openScheduleModal(videoId) {
+    const video = dadosSimulados.biblioteca.find(v => v.id === videoId);
+    if (!video) return;
+
+    // Preenche o nome do vídeo
+    document.getElementById('schedule-video-name').textContent = video.nome;
+    document.getElementById('schedule-video-id').value = video.id;
+
+    // Preenche a lista de canais
+    const channelSelect = document.getElementById('schedule-channel');
+    channelSelect.innerHTML = '<option value="">Selecione um canal...</option>';
+    dadosSimulados.canais
+        .filter(c => c.status === 'Ativo')
+        .forEach(canal => {
+            const option = `<option value="${canal.id}">${canal.nome}</option>`;
+            channelSelect.innerHTML += option;
+        });
+    
+    // Abre o modal
+    scheduleModal.classList.remove('hidden');
+}
+
+scheduleForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const videoId = parseInt(document.getElementById('schedule-video-id').value);
+    const channelId = document.getElementById('schedule-channel').value;
+    const datetime = document.getElementById('schedule-datetime').value;
+
+    if (!channelId || !datetime) {
+        alert("Por favor, selecione um canal e uma data/hora.");
+        return;
     }
+
+    const videoIndex = dadosSimulados.biblioteca.findIndex(v => v.id === videoId);
+    if (videoIndex !== -1) {
+        dadosSimulados.biblioteca[videoIndex].status = "Agendado";
+        console.log(`Vídeo ID ${videoId} agendado para o canal ID ${channelId} em ${datetime}`);
+    }
+
+    renderizarTabelaBiblioteca();
+    closeModal('schedule-modal');
+});
+
+
+// Evento para fechar modais clicando no fundo
+document.querySelectorAll('.modal-backdrop').forEach(modal => {
+    modal.addEventListener('click', (event) => {
+        if (event.target === modal) {
+            closeModal(modal.id);
+        }
+    });
 });
 
 // --- Inicialização ---
 
 document.addEventListener('DOMContentLoaded', () => {
-    const addChannelButton = document.querySelector('#dashboard .main-header .btn-primary');
-    if (addChannelButton) {
-        addChannelButton.setAttribute('onclick', 'openModalForNew()');
-    }
-
     navigateTo('dashboard');
     renderizarDashboard();
     feather.replace();
