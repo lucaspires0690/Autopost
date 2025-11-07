@@ -6,9 +6,9 @@ let dadosSimulados = {
         { id: 3, nome: "Canal de Testes", youtubeId: "UC_andanother", horario: "15:00", status: "Inativo" },
     ],
     biblioteca: [
-        { id: 1, nome: "video_final_01.mp4", duracao: "10:25", status: "Na Biblioteca" },
-        { id: 2, nome: "tutorial_novo_feature.mp4", duracao: "05:12", status: "Agendado" },
-        { id: 3, nome: "video_antigo_01.mp4", duracao: "15:40", status: "Postado" },
+        { id: 1, nome: "video_final_01.mp4", duracao: "10:25", status: "Na Biblioteca", titulo: "", descricao: "", tags: "" },
+        { id: 2, nome: "tutorial_novo_feature.mp4", duracao: "05:12", status: "Agendado", titulo: "Como usar a Nova Feature", descricao: "Neste tutorial completo, mostramos o passo a passo para ativar e usar a nova feature do nosso sistema.", tags: "tutorial, feature, guia" },
+        { id: 3, nome: "video_antigo_01.mp4", duracao: "15:40", status: "Postado", titulo: "Review do Produto X", descricao: "Análise completa e sincera do produto X. Vale a pena comprar em 2025?", tags: "review, produto x, unboxing" },
     ],
     agendamentosHoje: 1,
     falhas: 0,
@@ -59,7 +59,7 @@ function renderizarTabelaBiblioteca() {
                 <td><span class="status-badge ${statusClass}">${video.status}</span></td>
                 <td>
                     <button class="btn-icon schedule-icon" title="Agendar" onclick="openScheduleModal(${video.id})"><i data-feather="calendar"></i></button>
-                    <button class="btn-icon metadata-icon" title="Editar Metadados"><i data-feather="align-left"></i></button>
+                    <button class="btn-icon metadata-icon" title="Editar Metadados" onclick="openMetadataModal(${video.id})"><i data-feather="align-left"></i></button>
                     <button class="btn-icon remove-icon" title="Remover" onclick="removerVideo(${video.id})"><i data-feather="trash-2"></i></button>
                 </td>
             </tr>
@@ -108,7 +108,10 @@ function simularUpload() {
         id: novoId,
         nome: `novo_video_${String(novoId).padStart(2, '0')}.mp4`,
         duracao: `${Math.floor(Math.random() * 10 + 5)}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}`,
-        status: "Na Biblioteca"
+        status: "Na Biblioteca",
+        titulo: "",
+        descricao: "",
+        tags: ""
     };
     dadosSimulados.biblioteca.push(novoVideo);
     renderizarTabelaBiblioteca();
@@ -220,6 +223,41 @@ scheduleForm.addEventListener('submit', (event) => {
 
     renderizarTabelaBiblioteca();
     closeModal('schedule-modal');
+});
+
+// Modal de Metadados
+const metadataModal = document.getElementById('metadata-modal');
+const metadataForm = document.getElementById('metadata-form');
+
+function openMetadataModal(videoId) {
+    const video = dadosSimulados.biblioteca.find(v => v.id === videoId);
+    if (!video) return;
+
+    document.getElementById('metadata-video-name').textContent = video.nome;
+    document.getElementById('metadata-video-id').value = video.id;
+    document.getElementById('metadata-title').value = video.titulo || '';
+    document.getElementById('metadata-description').value = video.descricao || '';
+    document.getElementById('metadata-tags').value = video.tags || '';
+
+    metadataModal.classList.remove('hidden');
+}
+
+metadataForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const videoId = parseInt(document.getElementById('metadata-video-id').value);
+    const titulo = document.getElementById('metadata-title').value;
+    const descricao = document.getElementById('metadata-description').value;
+    const tags = document.getElementById('metadata-tags').value;
+
+    const videoIndex = dadosSimulados.biblioteca.findIndex(v => v.id === videoId);
+    if (videoIndex !== -1) {
+        dadosSimulados.biblioteca[videoIndex].titulo = titulo;
+        dadosSimulados.biblioteca[videoIndex].descricao = descricao;
+        dadosSimulados.biblioteca[videoIndex].tags = tags;
+        alert('Metadados salvos com sucesso!');
+    }
+
+    closeModal('metadata-modal');
 });
 
 

@@ -163,8 +163,10 @@ body {
 
 .btn-icon {
     background: none;
+    border: none;
     padding: 5px;
     border-radius: 50%;
+    cursor: pointer;
     transition: background-color 0.2s;
 }
 .btn-icon:hover {
@@ -377,7 +379,7 @@ tbody tr:hover {
     color: var(--cor-secundaria);
 }
 
-.form-group input, .form-group select {
+.form-group input, .form-group select, .form-group textarea {
     width: 100%;
     padding: 12px;
     background-color: var(--cor-sidebar);
@@ -386,15 +388,17 @@ tbody tr:hover {
     color: var(--cor-principal);
     font-size: 1rem;
     transition: border-color 0.2s, box-shadow 0.2s;
+    font-family: 'Inter', sans-serif;
+    resize: vertical;
 }
 
-.form-group input:focus, .form-group select:focus {
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
     outline: none;
     border-color: var(--cor-azul-primario);
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
 }
 
-.form-group input::placeholder {
+.form-group input::placeholder, .form-group textarea::placeholder {
     color: var(--cor-cinza);
 }
 

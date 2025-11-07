@@ -169,6 +169,38 @@
         </div>
     </div>
 
+    <!-- Modal (Pop-up) para Editar Metadados -->
+    <div id="metadata-modal" class="modal-backdrop hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="metadata-modal-title">Editar Metadados</h2>
+                <button onclick="closeModal('metadata-modal')" class="close-button">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="metadata-form">
+                    <input type="hidden" id="metadata-video-id">
+                    <p>Editando metadados para: <strong id="metadata-video-name"></strong></p>
+                    <div class="form-group">
+                        <label for="metadata-title">Título do Vídeo</label>
+                        <input type="text" id="metadata-title" placeholder="Insira o título do vídeo" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="metadata-description">Descrição</label>
+                        <textarea id="metadata-description" rows="5" placeholder="Insira a descrição completa do vídeo"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="metadata-tags">Tags (separadas por vírgula)</label>
+                        <input type="text" id="metadata-tags" placeholder="Ex: culinária, receita, bolo de chocolate">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" onclick="closeModal('metadata-modal')" class="btn btn-secondary">Cancelar</button>
+                <button type="submit" form="metadata-form" class="btn btn-primary">Salvar Metadados</button>
+            </div>
+        </div>
+    </div>
+
     <script src="script.js"></script>
 </body>
 </html>
