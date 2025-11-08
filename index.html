@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Autopost</title>
-    <link rel="stylesheet" href="style.css">
+    <title>Autopost Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -38,7 +38,7 @@
                 <h1>Autopost</h1>
             </div>
             <nav class="sidebar-nav">
-                <a href="#" class="nav-item active" data-page="dashboard"><i data-feather="grid"></i> Dashboard</a>
+                <a href="#" class="nav-item active" data-page="dashboard"><i data-feather="home"></i> Dashboard</a>
                 <a href="#" class="nav-item" data-page="configuracoes"><i data-feather="settings"></i> Configurações</a>
             </nav>
             <div class="sidebar-footer">
@@ -47,7 +47,7 @@
         </aside>
 
         <main class="main-content">
-            <!-- Página do Dashboard -->
+            <!-- Página do Dashboard Principal -->
             <div id="dashboard-page" class="page active">
                 <header class="main-header">
                     <h2>Canais</h2>
@@ -79,12 +79,12 @@
                 </header>
                 <div class="channel-layout">
                     <aside class="channel-sidebar">
-                        <a href="#" class="channel-nav-item active" data-subpage="biblioteca"><i data-feather="film"></i> Biblioteca</a>
+                        <a href="#" class="channel-nav-item active" data-subpage="biblioteca"><i data-feather="folder"></i> Biblioteca</a>
                         <a href="#" class="channel-nav-item" data-subpage="agendamento"><i data-feather="calendar"></i> Agend. em Massa</a>
                         <a href="#" class="channel-nav-item" data-subpage="estatisticas"><i data-feather="bar-chart-2"></i> Estatísticas</a>
                     </aside>
                     <div class="channel-content">
-                        <!-- Subpágina: Biblioteca -->
+                        <!-- Subpágina da Biblioteca -->
                         <div id="biblioteca-subpage" class="channel-page active">
                             <div class="subpage-header">
                                 <h3>Biblioteca de Mídia</h3>
@@ -95,52 +95,58 @@
                                     <input type="file" id="thumbnail-file-input" multiple hidden accept="image/*">
                                 </div>
                             </div>
-                            <div class="tab-container">
-                                <button class="tab-button active" data-tab="videos">Vídeos</button>
-                                <button class="tab-button" data-tab="thumbnails">Thumbnails</button>
-                            </div>
-                            <div id="videos-tab-content" class="tab-content active">
-                                <div class="table-container">
-                                    <table id="videos-table">
-                                        <thead><tr><th>Nome do Arquivo</th><th>Status</th><th>Ações</th></tr></thead>
-                                        <tbody></tbody>
-                                    </table>
+                            <div class="tabs-container">
+                                <div class="tab-buttons">
+                                    <button class="tab-button active" data-tab="videos">Vídeos</button>
+                                    <button class="tab-button" data-tab="thumbnails">Thumbnails</button>
                                 </div>
-                            </div>
-                            <div id="thumbnails-tab-content" class="tab-content">
-                                <div class="table-container">
-                                    <table id="thumbnails-table">
-                                        <thead><tr><th>Nome do Arquivo</th><th>Status</th><th>Ações</th></tr></thead>
-                                        <tbody></tbody>
-                                    </table>
+                                <div id="videos-tab-content" class="tab-content active">
+                                    <div class="table-container">
+                                        <table id="videos-table">
+                                            <thead><tr><th>Nome do Arquivo</th><th>Status</th><th>Ações</th></tr></thead>
+                                            <tbody></tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                                <div id="thumbnails-tab-content" class="tab-content">
+                                    <div class="table-container">
+                                        <table id="thumbnails-table">
+                                            <thead><tr><th>Nome do Arquivo</th><th>Status</th><th>Ações</th></tr></thead>
+                                            <tbody></tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                        <!-- Subpágina: Agendamento em Massa -->
+                        <!-- Subpágina de Agendamento em Massa -->
                         <div id="agendamento-subpage" class="channel-page">
                             <div class="subpage-header">
                                 <h3>Agendamento em Massa</h3>
                             </div>
-                            <div class="card">
+                            <div class="import-section">
                                 <h4>Importar Planilha de Agendamento</h4>
-                                <p class="text-muted">Faça o upload de um arquivo .CSV com os dados dos vídeos a serem publicados. Baixe o modelo para garantir o formato correto.</p>
-                                <div class="card-actions">
+                                <p>Faça o upload de um arquivo .CSV com os dados dos vídeos a serem publicados. Baixe o modelo para garantir o formato correto.</p>
+                                <div class="import-buttons">
                                     <button id="btn-download-csv-template" class="btn btn-secondary"><i data-feather="download"></i> Baixar Modelo</button>
                                     <button id="btn-import-csv" class="btn btn-primary"><i data-feather="upload"></i> Importar Planilha (CSV )</button>
                                     <input type="file" id="csv-file-input" hidden accept=".csv">
                                 </div>
                                 <div id="csv-status" class="log-box">Aguardando importação...</div>
                             </div>
-                            <div class="section-divider"></div>
-                            <h4>Fila de Agendamentos</h4>
-                            <div class="table-container">
-                                <table id="schedules-table">
-                                    <thead><tr><th>Título do Vídeo</th><th>Data de Publicação</th><th>Status</th><th>Ações</th></tr></thead>
-                                    <tbody></tbody>
-                                </table>
+                            <div class="schedule-list-section">
+                                <div class="subpage-header">
+                                    <h4>Fila de Agendamentos</h4>
+                                    <button id="btn-clear-schedules" class="btn btn-danger"><i data-feather="trash-2"></i> Limpar Fila</button>
+                                </div>
+                                <div class="table-container">
+                                    <table id="schedules-table">
+                                        <thead><tr><th>Título do Vídeo</th><th>Data de Publicação</th><th>Status</th><th>Ações</th></tr></thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
-                        <!-- Subpágina: Estatísticas -->
+                        <!-- Subpágina de Estatísticas -->
                         <div id="estatisticas-subpage" class="channel-page">
                             <h3>Estatísticas</h3>
                             <p>Em breve...</p>
@@ -154,7 +160,7 @@
                 <header class="main-header">
                     <h2>Configurações</h2>
                 </header>
-                <p>Página de configurações em breve...</p>
+                <p>Configurações gerais da aplicação em breve...</p>
             </div>
         </main>
     </div>
@@ -181,42 +187,40 @@
 
     <!-- Modal para Editar Agendamento -->
     <div id="schedule-modal" class="modal">
-        <div class="modal-content large">
+        <div class="modal-content">
             <span class="close-button" onclick="closeModal('schedule-modal')">&times;</span>
             <h3>Editar Agendamento</h3>
             <form id="schedule-form">
                 <input type="hidden" id="schedule-id-input">
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label for="schedule-nome-video">Nome do Arquivo de Vídeo</label>
-                        <input type="text" id="schedule-nome-video" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="schedule-nome-thumbnail">Nome do Arquivo de Thumbnail</label>
-                        <input type="text" id="schedule-nome-thumbnail">
-                    </div>
-                    <div class="form-group full-width">
-                        <label for="schedule-titulo">Título do Vídeo</label>
-                        <input type="text" id="schedule-titulo" required>
-                    </div>
-                    <div class="form-group full-width">
-                        <label for="schedule-descricao">Descrição</label>
-                        <textarea id="schedule-descricao" rows="4"></textarea>
-                    </div>
-                    <div class="form-group full-width">
-                        <label for="schedule-tags">Tags (separadas por vírgula)</label>
-                        <input type="text" id="schedule-tags">
-                    </div>
-                    <div class="form-group">
-                        <label for="schedule-data-publicacao">Data de Publicação</label>
-                        <input type="date" id="schedule-data-publicacao" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="schedule-hora-publicacao">Hora de Publicação</label>
-                        <input type="time" id="schedule-hora-publicacao" required>
-                    </div>
+                <div class="form-group">
+                    <label for="schedule-nome-video">Nome do Vídeo (arquivo)</label>
+                    <input type="text" id="schedule-nome-video" required>
                 </div>
-                <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                <div class="form-group">
+                    <label for="schedule-nome-thumbnail">Nome da Thumbnail (arquivo)</label>
+                    <input type="text" id="schedule-nome-thumbnail">
+                </div>
+                <div class="form-group">
+                    <label for="schedule-titulo">Título do Vídeo</label>
+                    <input type="text" id="schedule-titulo" required>
+                </div>
+                <div class="form-group">
+                    <label for="schedule-descricao">Descrição</label>
+                    <textarea id="schedule-descricao" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="schedule-tags">Tags (separadas por vírgula)</label>
+                    <input type="text" id="schedule-tags">
+                </div>
+                <div class="form-group">
+                    <label for="schedule-data-publicacao">Data da Publicação</label>
+                    <input type="date" id="schedule-data-publicacao" required>
+                </div>
+                <div class="form-group">
+                    <label for="schedule-hora-publicacao">Hora da Publicação</label>
+                    <input type="time" id="schedule-hora-publicacao" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Salvar Edição</button>
             </form>
         </div>
     </div>

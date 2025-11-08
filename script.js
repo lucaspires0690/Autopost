@@ -143,8 +143,8 @@ async function renderizarBiblioteca(canalId) {
         feather.replace();
     } catch (error) {
         console.error("Erro ao listar arquivos da biblioteca:", error);
-        videosTableBody.innerHTML = '<tr><td colspan="3">Erro ao carregar vídeos. Verifique o console (F12).</td></tr>';
-        thumbnailsTableBody.innerHTML = '<tr><td colspan="3">Erro ao carregar thumbnails. Verifique o console (F12).</td></tr>';
+        videosTableBody.innerHTML = '<tr><td colspan="3">Erro ao carregar vídeos.</td></tr>';
+        thumbnailsTableBody.innerHTML = '<tr><td colspan="3">Erro ao carregar thumbnails.</td></tr>';
     }
 }
 
@@ -388,11 +388,11 @@ function baixarModeloCSV() {
 
 async function editarAgendamento(docId, dados) {
     try {
-        const dataHora = new Date(`${dados.data_publicacao}T${dados.hora_publicacao}`);
+        const dataHora = new Date(`${dados.dataPublicacao}T${dados.horaPublicacao}`);
         
         const dadosParaSalvar = {
-            nomeVideo: dados.nome_video,
-            nomeThumbnail: dados.nome_thumbnail,
+            nomeVideo: dados.nomeVideo,
+            nomeThumbnail: dados.nomeThumbnail,
             titulo: dados.titulo,
             descricao: dados.descricao,
             tags: dados.tags,
@@ -417,6 +417,32 @@ async function removerAgendamento(docId) {
             console.error("Erro ao remover agendamento: ", error);
             alert("Não foi possível remover o agendamento.");
         }
+    }
+}
+
+async function limparTodosAgendamentos() {
+    if (!canalAtual) return;
+    if (agendamentosCache.length === 0) {
+        alert("A fila de agendamentos já está vazia.");
+        return;
+    }
+    if (!confirm(`Tem certeza que deseja apagar TODOS os ${agendamentosCache.length} agendamentos deste canal? Esta ação não pode ser desfeita.`)) {
+        return;
+    }
+
+    const batch = db.batch();
+    agendamentosCache.forEach(agendamento => {
+        const docRef = db.collection('agendamentos').doc(agendamento.docId);
+        batch.delete(docRef);
+    });
+
+    try {
+        await batch.commit();
+        alert("Todos os agendamentos foram excluídos com sucesso.");
+        renderizarAgendamentos();
+    } catch (error) {
+        console.error("Erro ao excluir agendamentos em lote: ", error);
+        alert("Ocorreu um erro ao limpar a fila de agendamentos.");
     }
 }
 
@@ -527,13 +553,13 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const docId = document.getElementById('schedule-id-input').value;
             const dados = {
-                nome_video: document.getElementById('schedule-nome-video').value,
-                nome_thumbnail: document.getElementById('schedule-nome-thumbnail').value,
+                nomeVideo: document.getElementById('schedule-nome-video').value,
+                nomeThumbnail: document.getElementById('schedule-nome-thumbnail').value,
                 titulo: document.getElementById('schedule-titulo').value,
                 descricao: document.getElementById('schedule-descricao').value,
                 tags: document.getElementById('schedule-tags').value,
-                data_publicacao: document.getElementById('schedule-data-publicacao').value,
-                hora_publicacao: document.getElementById('schedule-hora-publicacao').value
+                dataPublicacao: document.getElementById('schedule-data-publicacao').value,
+                horaPublicacao: document.getElementById('schedule-hora-publicacao').value
             };
             editarAgendamento(docId, dados);
         });
@@ -597,6 +623,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnDownloadTemplate = document.getElementById('btn-download-csv-template');
     if (btnDownloadTemplate) {
         btnDownloadTemplate.addEventListener('click', baixarModeloCSV);
+    }
+
+    // Botão para limpar todos os agendamentos
+    const btnClearSchedules = document.getElementById('btn-clear-schedules');
+    if (btnClearSchedules) {
+        btnClearSchedules.addEventListener('click', limparTodosAgendamentos);
     }
 
     // Fechar modais
