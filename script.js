@@ -9,12 +9,14 @@ let dadosSimulados = {
         { id: 3, nome: "Canal de Testes", youtubeId: "UC_andanother", horario: "15:00", status: "Inativo" },
     ],
     biblioteca: [
-        { id: 1, nome: "video_final_01.mp4", duracao: "10:25", status: "Na Biblioteca", titulo: "", descricao: "", tags: "" },
+        { id: 1, nome: "video_final_01.mp4", duracao: "10:25", status: "Na Biblioteca", titulo: "Título Padrão 1", descricao: "Descrição padrão 1.", tags: "tag1" },
         { id: 2, nome: "tutorial_novo_feature.mp4", duracao: "05:12", status: "Agendado", titulo: "Como usar a Nova Feature", descricao: "Neste tutorial completo, mostramos o passo a passo para ativar e usar a nova feature do nosso sistema.", tags: "tutorial, feature, guia" },
         { id: 3, nome: "video_antigo_01.mp4", duracao: "15:40", status: "Postado", titulo: "Review do Produto X", descricao: "Análise completa e sincera do produto X. Vale a pena comprar em 2025?", tags: "review, produto x, unboxing" },
+        { id: 4, nome: "video_para_agendar_02.mp4", duracao: "08:15", status: "Na Biblioteca", titulo: "Título Padrão 2", descricao: "Descrição padrão 2.", tags: "tag2" },
     ],
     agendamentosHoje: 1,
     falhas: 0,
+    linhasPlanilha: [],
 };
 
 function renderizarTabelaCanais() {
@@ -104,7 +106,7 @@ function removerCanal(id) {
 
 function simularUpload() {
     const novoId = dadosSimulados.biblioteca.length > 0 ? Math.max(...dadosSimulados.biblioteca.map(v => v.id)) + 1 : 1;
-    dadosSimulados.biblioteca.push({ id: novoId, nome: `novo_video_${novoId}.mp4`, duracao: "00:00", status: "Na Biblioteca", titulo: "", descricao: "", tags: "" });
+    dadosSimulados.biblioteca.push({ id: novoId, nome: `novo_video_${novoId}.mp4`, duracao: "00:00", status: "Na Biblioteca", titulo: `Título Padrão ${novoId}`, descricao: `Descrição padrão ${novoId}.`, tags: `tag${novoId}` });
     renderizarTabelaBiblioteca();
     renderizarDashboard();
     alert("Novo vídeo simulado adicionado à biblioteca!");
@@ -167,69 +169,103 @@ function openMetadataModal(videoId) {
 // PARTE 5: AGENDAMENTO EM MASSA
 // =================================================================================
 
-function downloadModelo() {
+function exportarPlanilhaParaAgendar() {
+    const videosParaAgendar = dadosSimulados.biblioteca.filter(v => v.status === 'Na Biblioteca');
+    if (videosParaAgendar.length === 0) {
+        alert("Não há vídeos 'Na Biblioteca' para exportar.");
+        return;
+    }
+
     const separador = ';';
     const cabecalho = ["nome_do_arquivo", "titulo_do_video", "descricao", "tags", "nome_do_canal", "data_hora_postagem (YYYY-MM-DD HH:MM)"].join(separador);
-    const exemplo = ["video_final_01.mp4", "Meu Primeiro Vídeo", "\"Descrição com vírgulas, para exemplo\"", "tag1, tag2", "Canal Principal", "2025-12-25 10:00"].join(separador);
-    const conteudoCsv = "\uFEFF" + cabecalho + "\n" + exemplo;
+    
+    const linhas = videosParaAgendar.map(video => {
+        // Coloca aspas na descrição para proteger vírgulas e ponto e vírgulas
+        const descricaoProtegida = `"${video.descricao.replace(/"/g, '""')}"`;
+        return [
+            video.nome,
+            video.titulo,
+            descricaoProtegida,
+            video.tags,
+            "", // Deixa o nome do canal em branco para o usuário preencher
+            ""  // Deixa a data em branco para o usuário preencher
+        ].join(separador);
+    });
+
+    const conteudoCsv = "\uFEFF" + cabecalho + "\n" + linhas.join("\n");
+    
     const blob = new Blob([conteudoCsv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = "modelo_autopost.csv";
+    link.download = "autopost_para_preencher.csv";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
 }
 
-function processarPlanilha(file) {
-    Papa.parse(file, {
-        header: true,
-        skipEmptyLines: true,
-        delimiter: ";",
-        complete: function(results) {
-            const tbody = document.querySelector("#bulk-preview-table tbody");
-            tbody.innerHTML = '';
-            let linhasValidas = 0;
+function processarResultadosPlanilha(results) {
+    const tbody = document.querySelector("#bulk-preview-table tbody");
+    tbody.innerHTML = '';
+    dadosSimulados.linhasPlanilha = [];
 
-            results.data.forEach(linha => {
-                const nomeArquivo = linha.nome_do_arquivo;
-                const nomeCanal = linha.nome_do_canal;
-                const dataHora = linha["data_hora_postagem (YYYY-MM-DD HH:MM)"];
-                
-                const video = dadosSimulados.biblioteca.find(v => v.nome === nomeArquivo);
-                const canal = dadosSimulados.canais.find(c => c.nome === nomeCanal && c.status === 'Ativo');
-                
-                let erro = '';
-                if (!video) erro = 'Vídeo não encontrado na biblioteca.';
-                else if (video.status !== 'Na Biblioteca') erro = 'Vídeo já agendado ou postado.';
-                else if (!canal) erro = 'Canal não encontrado ou inativo.';
-                else if (!dataHora || isNaN(new Date(dataHora).getTime())) erro = 'Data ou hora inválida.';
+    results.data.forEach(linha => {
+        const nomeArquivo = linha.nome_do_arquivo;
+        const nomeCanal = linha.nome_do_canal;
+        const dataHora = linha["data_hora_postagem (YYYY-MM-DD HH:MM)"];
+        
+        const video = dadosSimulados.biblioteca.find(v => v.nome === nomeArquivo);
+        const canal = dadosSimulados.canais.find(c => c.nome === nomeCanal && c.status === 'Ativo');
+        
+        let erro = '';
+        if (!video) erro = 'Vídeo não encontrado na biblioteca.';
+        else if (video.status !== 'Na Biblioteca') erro = 'Vídeo já agendado ou postado.';
+        else if (!canal) erro = 'Canal não encontrado ou inativo.';
+        else if (!dataHora || isNaN(new Date(dataHora).getTime())) erro = 'Data ou hora inválida.';
 
-                const statusClass = erro ? 'status-invalido' : 'status-valido';
-                const statusText = erro || 'Pronto para agendar';
-                if (!erro) linhasValidas++;
+        const linhaProcessada = { ...linha, erro: erro };
+        dadosSimulados.linhasPlanilha.push(linhaProcessada);
 
-                const tr = `
-                    <tr>
-                        <td>${nomeArquivo || 'N/A'}</td>
-                        <td>${nomeCanal || 'N/A'}</td>
-                        <td>${dataHora || 'N/A'}</td>
-                        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
-                    </tr>`;
-                tbody.innerHTML += tr;
-            });
+        const statusClass = erro ? 'status-invalido' : 'status-valido';
+        const statusText = erro || 'Pronto para agendar';
 
-            document.getElementById('bulk-results-section').classList.remove('hidden');
-            const btnConfirmar = document.querySelector('.bulk-confirm-footer button');
-            btnConfirmar.disabled = linhasValidas === 0;
-            feather.replace();
-        }
+        const tr = `
+            <tr>
+                <td>${nomeArquivo || 'N/A'}</td>
+                <td>${nomeCanal || 'N/A'}</td>
+                <td>${dataHora || 'N/A'}</td>
+                <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+            </tr>`;
+        tbody.innerHTML += tr;
     });
+
+    document.getElementById('bulk-results-section').classList.remove('hidden');
+    const linhasValidas = dadosSimulados.linhasPlanilha.filter(l => !l.erro).length;
+    document.querySelector('.bulk-confirm-footer button').disabled = linhasValidas === 0;
+    feather.replace();
 }
 
 function confirmarAgendamentoEmMassa() {
-    alert("Lógica para confirmar e agendar todos os vídeos válidos será implementada aqui. Por enquanto, isso confirma que o fluxo funciona!");
-    // Futuramente, aqui faremos um loop nas linhas válidas e mudaremos o status dos vídeos.
+    const linhasParaAgendar = dadosSimulados.linhasPlanilha.filter(l => !l.erro);
+    if (linhasParaAgendar.length === 0) {
+        alert("Nenhuma linha válida para agendar.");
+        return;
+    }
+
+    if (confirm(`Você está prestes a agendar ${linhasParaAgendar.length} vídeo(s). Deseja continuar?`)) {
+        linhasParaAgendar.forEach(linha => {
+            const video = dadosSimulados.biblioteca.find(v => v.nome === linha.nome_do_arquivo);
+            if (video) {
+                video.status = 'Agendado';
+                video.titulo = linha.titulo_do_video;
+                video.descricao = linha.descricao;
+                video.tags = linha.tags;
+            }
+        });
+
+        alert(`${linhasParaAgendar.length} vídeo(s) foram agendados com sucesso! Verifique a aba Biblioteca.`);
+        document.getElementById('bulk-results-section').classList.add('hidden');
+        renderizarTabelaBiblioteca();
+    }
 }
 
 // =================================================================================
@@ -285,7 +321,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('csv-upload-input').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (file) {
-            processarPlanilha(file);
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                delimiter: ";",
+                complete: processarResultadosPlanilha
+            });
             e.target.value = '';
         }
     });

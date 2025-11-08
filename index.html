@@ -6,7 +6,6 @@
     <title>Autopost - Painel de Controle</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://unpkg.com/feather-icons"></script>
-    <!-- Adicionando a biblioteca Papa Parse para ler arquivos CSV -->
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
 </head>
 <body>
@@ -117,28 +116,28 @@
                 </div>
                 <div class="content-section">
                     <h2>Importar Planilha de Agendamento</h2>
-                    <p class="instrucao">Para agendar múltiplos vídeos, siga os passos abaixo. Certifique-se de que os nomes dos arquivos na planilha correspondem exatamente aos nomes na sua Biblioteca de Mídia.</p>
+                    <p class="instrucao">Para agendar múltiplos vídeos, siga os passos abaixo. Exporte a planilha, preencha os dados de agendamento e faça o upload.</p>
                     
                     <div class="bulk-actions">
                         <div class="action-step">
                             <span class="step-number">1</span>
                             <div>
-                                <p>Baixe nosso modelo para garantir que sua planilha esteja no formato correto.</p>
-                                <button class="btn btn-warning" onclick="downloadModelo()"><i data-feather="download"></i> Baixar Modelo (.csv)</button>
+                                <p>Exporte uma planilha com todos os vídeos prontos para agendar.</p>
+                                <button class="btn btn-warning" onclick="exportarPlanilhaParaAgendar()"><i data-feather="download"></i> Exportar para Planilha</button>
                             </div>
                         </div>
                         <div class="action-step">
                             <span class="step-number">2</span>
                             <div>
-                                <p>Após preencher, faça o upload da sua planilha para iniciar o agendamento em massa.</p>
-                                <button class="btn btn-success" onclick="document.getElementById('csv-upload-input').click()"><i data-feather="upload"></i> Enviar Planilha Preenchida</button>
+                                <p>Após preencher, envie a planilha para iniciar o agendamento em massa.</p>
+                                <button class="btn btn-success" onclick="document.getElementById('csv-upload-input').click()"><i data-feather="upload"></i> Upload de Planilha</button>
                                 <input type="file" id="csv-upload-input" accept=".csv" style="display: none;">
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Nova Seção de Pré-visualização -->
+                <!-- Seção de Pré-visualização -->
                 <div id="bulk-results-section" class="content-section hidden">
                     <h2>Pré-visualização do Agendamento</h2>
                     <p class="instrucao">Verifique os dados importados da sua planilha. Linhas com erros estão marcadas em vermelho e não serão agendadas.</p>
