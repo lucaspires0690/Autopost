@@ -5,76 +5,87 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Autopost - Painel de Controle</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://unpkg.com/feather-icons"></script>
-    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
     <div class="container">
-        <!-- Menu Lateral Principal -->
-        <nav class="sidebar">
+        <aside class="sidebar">
             <div class="sidebar-header">
-                <i data-feather="youtube" class="logo-icon"></i>
-                <span class="logo-text">Autopost</span>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="logo-icon"><path d="M12.0002 2.00002L4.00018 6.00002L12.0002 10L20.0002 6.00002L12.0002 2.00002Z" fill="#3b82f6"></path><path d="M4 6V18L12 22V10L4 6Z" fill="#2563eb"></path><path d="M20 6V18L12 22V10L20 6Z" fill="#60a5fa"></path></svg>
+                <h1>Autopost</h1>
             </div>
-            <ul class="nav-menu">
-                <li><a href="#" class="nav-link active" onclick="navigateTo('dashboard' )"><i data-feather="grid"></i><span>Dashboard</span></a></li>
-                <li><a href="#" class="nav-link" onclick="navigateTo('settings')"><i data-feather="settings"></i><span>Configurações</span></a></li>
-            </ul>
-        </nav>
+            <nav class="sidebar-nav">
+                <a href="#" class="nav-item active" data-page="dashboard">
+                    <i data-feather="home"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="#" class="nav-item" data-page="configuracoes">
+                    <i data-feather="settings"></i>
+                    <span>Configurações</span>
+                </a>
+            </nav>
+        </aside>
 
-        <!-- Conteúdo Principal -->
         <main class="main-content">
-            <!-- Seção do Dashboard (Portal de Canais) -->
-            <section id="dashboard" class="page active">
-                <div class="main-header">
-                    <h1>Meus Canais</h1>
-                    <button class="btn btn-primary" onclick="openChannelModalForNew()"><i data-feather="plus-circle"></i> Adicionar Novo Canal</button>
+            <!-- Página do Dashboard -->
+            <div id="dashboard-page" class="page active">
+                <header class="main-header">
+                    <h2>Meus Canais</h2>
+                    <button id="btn-add-channel" class="btn btn-primary">
+                        <i data-feather="plus"></i>
+                        Adicionar Novo Canal
+                    </button>
+                </header>
+                <div class="table-container">
+                    <table id="channels-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nome do Canal</th>
+                                <th>Data de Criação</th>
+                                <th>Status</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Linhas dos canais serão inseridas aqui pelo JavaScript -->
+                        </tbody>
+                    </table>
                 </div>
-                <div class="content-section">
-                    <div class="table-container">
-                        <table id="canais-table-dashboard">
-                            <thead>
-                                <tr>
-                                    <th>ID</th>
-                                    <th>Nome do Canal</th>
-                                    <th>Data de Criação</th>
-                                    <th>Status</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Linhas de canais serão inseridas aqui -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </section>
+            </div>
 
-            <!-- NOVA PÁGINA: Gerenciamento de Canal -->
-            <section id="channel-management-page" class="page">
-                <div class="channel-main-header">
-                    <button class="btn btn-secondary btn-back" onclick="navigateTo('dashboard')"><i data-feather="arrow-left"></i> Voltar ao Dashboard</button>
-                    <h1 id="channel-management-title"></h1>
-                </div>
-                <div class="channel-management-container">
-                    <!-- Menu Interno do Canal -->
-                    <aside class="channel-sidebar">
-                        <ul class="channel-nav-menu">
-                            <li><a href="#" class="channel-nav-link active" onclick="navigateToChannelSection('channel-library')"><i data-feather="film"></i><span>Biblioteca</span></a></li>
-                            <li><a href="#" class="channel-nav-link" onclick="navigateToChannelSection('channel-bulk-schedule')"><i data-feather="upload"></i><span>Agend. em Massa</span></a></li>
-                            <li><a href="#" class="channel-nav-link" onclick="navigateToChannelSection('channel-settings')"><i data-feather="sliders"></i><span>Config. do Canal</span></a></li>
-                        </ul>
-                    </aside>
-                    <!-- Conteúdo Interno do Canal -->
+            <!-- Página de Gerenciamento de Canal -->
+            <div id="channel-management-page" class="page">
+                <header class="main-header">
+                    <button id="btn-back-to-dashboard" class="btn btn-secondary">
+                        <i data-feather="arrow-left"></i>
+                        Voltar ao Dashboard
+                    </button>
+                    <h2 id="channel-management-title">Gerenciamento do Canal</h2>
+                </header>
+                <div class="channel-layout">
+                    <nav class="channel-sidebar">
+                        <a href="#" class="channel-nav-item active" data-subpage="biblioteca">
+                            <i data-feather="film"></i>
+                            <span>Biblioteca</span>
+                        </a>
+                        <a href="#" class="channel-nav-item" data-subpage="agendamento-massa">
+                            <i data-feather="calendar"></i>
+                            <span>Agend. em Massa</span>
+                        </a>
+                        <a href="#" class="channel-nav-item" data-subpage="estatisticas">
+                            <i data-feather="bar-chart-2"></i>
+                            <span>Estatísticas</span>
+                        </a>
+                    </nav>
                     <div class="channel-content">
-                        <!-- Seção Biblioteca do Canal -->
-                        <section id="channel-library" class="channel-page active">
-                            <div class="main-header">
-                                <h2>Biblioteca de Mídia</h2>
-                                <button class="btn btn-primary" onclick="simularUpload()"><i data-feather="upload-cloud"></i> Fazer Upload de Vídeos</button>
-                            </div>
+                        <!-- Subpágina da Biblioteca -->
+                        <div id="biblioteca-subpage" class="channel-page active">
+                            <h3>Biblioteca de Mídia</h3>
                             <div class="table-container">
-                                <table id="library-table">
+                                <table id="videos-table">
                                     <thead>
                                         <tr>
                                             <th>Nome do Arquivo</th>
@@ -83,164 +94,143 @@
                                             <th>Ações</th>
                                         </tr>
                                     </thead>
-                                    <tbody></tbody>
+                                    <tbody>
+                                        <!-- Vídeos serão inseridos aqui -->
+                                    </tbody>
                                 </table>
                             </div>
-                        </section>
-
-                        <!-- Seção Agend. em Massa do Canal -->
-                        <section id="channel-bulk-schedule" class="channel-page">
-                            <div class="main-header">
-                                <h2>Agendamento em Massa</h2>
-                            </div>
-                            <div class="content-section" style="background-color: var(--cor-fundo);">
-                                <p class="instrucao">Para agendar múltiplos vídeos para este canal, siga os passos abaixo.</p>
-                                <div class="bulk-actions">
-                                    <div class="action-step">
-                                        <span class="step-number">1</span>
-                                        <div>
-                                            <p>Exporte uma planilha com todos os vídeos deste canal prontos para agendar.</p>
-                                            <button class="btn btn-warning" onclick="exportarPlanilhaParaAgendar()"><i data-feather="download"></i> Exportar para Planilha</button>
-                                        </div>
-                                    </div>
-                                    <div class="action-step">
-                                        <span class="step-number">2</span>
-                                        <div>
-                                            <p>Após preencher, envie a planilha para iniciar o agendamento em massa.</p>
-                                            <button class="btn btn-success" onclick="document.getElementById('csv-upload-input').click()"><i data-feather="upload"></i> Upload de Planilha</button>
-                                            <input type="file" id="csv-upload-input" accept=".csv" style="display: none;">
-                                        </div>
-                                    </div>
+                        </div>
+                        <!-- Subpágina de Agendamento em Massa -->
+                        <div id="agendamento-massa-subpage" class="channel-page">
+                            <h3>Agendamento em Massa</h3>
+                            <div class="upload-section">
+                                <p>Faça o upload de uma planilha (.csv ) para agendar múltiplos vídeos de uma vez.</p>
+                                <div class="upload-buttons">
+                                    <button id="btn-download-template" class="btn btn-warning">
+                                        <i data-feather="download"></i>
+                                        Exportar para Planilha
+                                    </button>
+                                    <button id="btn-upload-csv" class="btn btn-success">
+                                        <i data-feather="upload"></i>
+                                        Upload de Planilha
+                                    </button>
+                                    <input type="file" id="csv-file-input" accept=".csv" style="display: none;">
                                 </div>
                             </div>
-                            <div id="bulk-results-section" class="content-section hidden" style="background-color: var(--cor-fundo);">
-                                <h2>Pré-visualização do Agendamento</h2>
+                            <div id="preview-section" style="display: none;">
+                                <h4>Pré-visualização do Agendamento</h4>
                                 <div class="table-container">
-                                    <table id="bulk-preview-table">
+                                    <table id="preview-table">
                                         <thead>
                                             <tr>
-                                                <th>Arquivo</th>
+                                                <th>Vídeo</th>
+                                                <th>Título</th>
                                                 <th>Data</th>
+                                                <th>Hora</th>
                                                 <th>Status</th>
                                             </tr>
                                         </thead>
-                                        <tbody></tbody>
+                                        <tbody>
+                                            <!-- Linhas da pré-visualização -->
+                                        </tbody>
                                     </table>
                                 </div>
-                                <div class="bulk-confirm-footer">
-                                    <button class="btn btn-primary" onclick="confirmarAgendamentoEmMassa()"><i data-feather="check-circle"></i> Confirmar e Agendar</button>
-                                </div>
+                                <button id="btn-confirm-schedule" class="btn btn-primary" disabled>Confirmar e Agendar</button>
                             </div>
-                        </section>
-
-                        <!-- Seção Config. do Canal -->
-                        <section id="channel-settings" class="channel-page">
-                             <div class="main-header">
-                                <h2>Configurações do Canal</h2>
-                            </div>
-                            <div class="content-section" style="background-color: var(--cor-fundo);">
-                                <p>Em breve: aqui você poderá ajustar configurações específicas para este canal.</p>
-                            </div>
-                        </section>
+                        </div>
+                         <!-- Subpágina de Estatísticas -->
+                         <div id="estatisticas-subpage" class="channel-page">
+                            <h3>Estatísticas do Canal</h3>
+                            <p>Em breve...</p>
+                        </div>
                     </div>
                 </div>
-            </section>
+            </div>
 
-            <!-- Seção de Configurações Gerais -->
-            <section id="settings" class="page">
-                <div class="main-header">
-                    <h1>Configurações Gerais</h1>
-                </div>
-                <div class="content-section">
-                    <h2>Conexão com a API do YouTube</h2>
-                    <p class="instrucao">Em breve: aqui você irá conectar sua conta Google para permitir que o Autopost publique seus vídeos.</p>
-                    <button class="btn btn-primary" disabled>Conectar com Google</button>
-                </div>
-            </section>
+            <!-- Página de Configurações -->
+            <div id="configuracoes-page" class="page">
+                <header class="main-header">
+                    <h2>Configurações</h2>
+                </header>
+                <p>Configurações gerais do Autopost.</p>
+            </div>
         </main>
     </div>
 
-    <!-- Modais (Pop-ups) -->
-    <div id="channel-modal" class="modal-backdrop hidden">
+    <!-- Modal de Adicionar/Editar Canal -->
+    <div id="channel-modal" class="modal">
         <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="channel-modal-title">Adicionar Novo Canal</h2>
-                <button onclick="closeModal('channel-modal')" class="close-button">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="channel-form">
-                    <input type="hidden" id="channel-edit-id">
-                    <div class="form-group">
-                        <label for="channel-name">Nome do Canal</label>
-                        <input type="text" id="channel-name" placeholder="Ex: Canal de Culinária" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="channel-id">ID do Canal no YouTube</label>
-                        <input type="text" id="channel-id" placeholder="Ex: UC_x5XG1OV2P6uZZ5FSM9Ttw" required>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" onclick="closeModal('channel-modal')" class="btn btn-secondary">Cancelar</button>
-                <button type="submit" form="channel-form" class="btn btn-primary">Salvar</button>
-            </div>
+            <span class="close-button" onclick="closeModal('channel-modal')">&times;</span>
+            <h3 id="modal-title">Adicionar Novo Canal</h3>
+            <form id="channel-form">
+                <input type="hidden" id="channel-id-input">
+                <div class="form-group">
+                    <label for="channel-name">Nome do Canal</label>
+                    <input type="text" id="channel-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="channel-youtube-id">ID do Canal no YouTube</label>
+                    <input type="text" id="channel-youtube-id" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Salvar Canal</button>
+            </form>
         </div>
     </div>
 
-    <div id="schedule-modal" class="modal-backdrop hidden">
+    <!-- Modal de Agendamento -->
+    <div id="schedule-modal" class="modal">
         <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="schedule-modal-title">Agendar Vídeo</h2>
-                <button onclick="closeModal('schedule-modal')" class="close-button">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="schedule-form">
-                    <input type="hidden" id="schedule-video-id">
-                    <p>Você está agendando o vídeo: <strong id="schedule-video-name"></strong></p>
-                    <div class="form-group">
-                        <label for="schedule-datetime">Data e Hora da Postagem</label>
-                        <input type="datetime-local" id="schedule-datetime" required>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" onclick="closeModal('schedule-modal')" class="btn btn-secondary">Cancelar</button>
-                <button type="submit" form="schedule-form" class="btn btn-primary">Salvar Agendamento</button>
-            </div>
+            <span class="close-button" onclick="closeModal('schedule-modal')">&times;</span>
+            <h3>Agendar Vídeo</h3>
+            <p><strong>Vídeo:</strong> <span id="schedule-video-name"></span></p>
+            <form id="schedule-form">
+                <input type="hidden" id="schedule-video-id">
+                <div class="form-group">
+                    <label for="schedule-channel">Selecione o Canal</label>
+                    <select id="schedule-channel" required>
+                        <!-- Opções de canais -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="schedule-datetime">Data e Hora da Postagem</label>
+                    <input type="datetime-local" id="schedule-datetime" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Salvar Agendamento</button>
+            </form>
         </div>
     </div>
 
-    <div id="metadata-modal" class="modal-backdrop hidden">
+    <!-- Modal de Metadados -->
+    <div id="metadata-modal" class="modal">
         <div class="modal-content">
-            <div class="modal-header">
-                <h2 id="metadata-modal-title">Editar Metadados</h2>
-                <button onclick="closeModal('metadata-modal')" class="close-button">&times;</button>
-            </div>
-            <div class="modal-body">
-                <form id="metadata-form">
-                    <input type="hidden" id="metadata-video-id">
-                    <p>Editando metadados para: <strong id="metadata-video-name"></strong></p>
-                    <div class="form-group">
-                        <label for="metadata-title">Título do Vídeo</label>
-                        <input type="text" id="metadata-title" placeholder="Insira o título do vídeo" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="metadata-description">Descrição</label>
-                        <textarea id="metadata-description" rows="5" placeholder="Insira a descrição completa do vídeo"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="metadata-tags">Tags (separadas por vírgula)</label>
-                        <input type="text" id="metadata-tags" placeholder="Ex: culinária, receita, bolo de chocolate">
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" onclick="closeModal('metadata-modal')" class="btn btn-secondary">Cancelar</button>
-                <button type="submit" form="metadata-form" class="btn btn-primary">Salvar Metadados</button>
-            </div>
+            <span class="close-button" onclick="closeModal('metadata-modal')">&times;</span>
+            <h3>Editar Metadados do Vídeo</h3>
+            <p><strong>Vídeo:</strong> <span id="metadata-video-name"></span></p>
+            <form id="metadata-form">
+                <input type="hidden" id="metadata-video-id">
+                <div class="form-group">
+                    <label for="metadata-title">Título</label>
+                    <input type="text" id="metadata-title">
+                </div>
+                <div class="form-group">
+                    <label for="metadata-description">Descrição</label>
+                    <textarea id="metadata-description" rows="4"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="metadata-tags">Tags (separadas por vírgula)</label>
+                    <input type="text" id="metadata-tags">
+                </div>
+                <button type="submit" class="btn btn-primary">Salvar Metadados</button>
+            </form>
         </div>
     </div>
 
+    <!-- Scripts do Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-firestore-compat.js"></script>
+    
+    <!-- Scripts da Aplicação -->
+    <script src="https://unpkg.com/feather-icons"></script>
     <script src="script.js"></script>
 </body>
 </html>
