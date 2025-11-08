@@ -1,4 +1,7 @@
-// --- Dados Simulados Iniciais ---
+// =================================================================================
+// PARTE 1: DADOS E RENDERIZAÇÃO
+// =================================================================================
+
 let dadosSimulados = {
     canais: [
         { id: 1, nome: "Canal Principal", youtubeId: "UC_x5XG1OV2P6uZZ5FSM9Ttw", horario: "09:00", status: "Ativo" },
@@ -14,26 +17,21 @@ let dadosSimulados = {
     falhas: 0,
 };
 
-// --- Funções de Renderização ---
-
 function renderizarTabelaCanais() {
     const tbody = document.querySelector("#canais-table-dashboard tbody");
     if (!tbody) return;
     tbody.innerHTML = '';
-
     dadosSimulados.canais.forEach(canal => {
-        const statusClass = canal.status === 'Ativo' ? 'status-ativo' : 'status-inativo';
         const tr = `
             <tr>
                 <td>${canal.nome}</td>
                 <td>Hoje às ${canal.horario}</td>
-                <td><span class="status-badge ${statusClass}">${canal.status}</span></td>
+                <td><span class="status-badge ${canal.status === 'Ativo' ? 'status-ativo' : 'status-inativo'}">${canal.status}</span></td>
                 <td>
                     <button class="btn-icon edit-icon" title="Editar" onclick="openChannelModalForEdit(${canal.id})"><i data-feather="edit-2"></i></button>
                     <button class="btn-icon remove-icon" title="Remover" onclick="removerCanal(${canal.id})"><i data-feather="trash-2"></i></button>
                 </td>
-            </tr>
-        `;
+            </tr>`;
         tbody.innerHTML += tr;
     });
     feather.replace();
@@ -43,7 +41,6 @@ function renderizarTabelaBiblioteca() {
     const tbody = document.querySelector("#library-table tbody");
     if (!tbody) return;
     tbody.innerHTML = '';
-
     dadosSimulados.biblioteca.forEach(video => {
         let statusClass = '';
         switch (video.status) {
@@ -51,7 +48,6 @@ function renderizarTabelaBiblioteca() {
             case 'Agendado': statusClass = 'status-agendado'; break;
             case 'Postado': statusClass = 'status-postado'; break;
         }
-        
         const tr = `
             <tr>
                 <td>${video.nome}</td>
@@ -62,8 +58,7 @@ function renderizarTabelaBiblioteca() {
                     <button class="btn-icon metadata-icon" title="Editar Metadados" onclick="openMetadataModal(${video.id})"><i data-feather="align-left"></i></button>
                     <button class="btn-icon remove-icon" title="Remover" onclick="removerVideo(${video.id})"><i data-feather="trash-2"></i></button>
                 </td>
-            </tr>
-        `;
+            </tr>`;
         tbody.innerHTML += tr;
     });
     feather.replace();
@@ -77,54 +72,39 @@ function renderizarDashboard() {
     renderizarTabelaCanais();
 }
 
-// --- Navegação ---
+// =================================================================================
+// PARTE 2: NAVEGAÇÃO E FUNÇÕES GERAIS
+// =================================================================================
 
 function navigateTo(pageId) {
     document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
-    const targetPage = document.getElementById(pageId);
-    if (targetPage) {
-        targetPage.classList.add('active');
-    }
-
+    document.getElementById(pageId)?.classList.add('active');
     document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
-    const targetLink = document.querySelector(`.nav-link[onclick="navigateTo('${pageId}')"]`);
-    if (targetLink) {
-        targetLink.classList.add('active');
-    }
-
+    document.querySelector(`.nav-link[onclick="navigateTo('${pageId}')"]`)?.classList.add('active');
+    if (pageId === 'library') renderizarTabelaBiblioteca();
+    if (pageId === 'dashboard') renderizarTabelaCanais();
+    if (pageId === 'bulk-schedule') document.getElementById('bulk-results-section').classList.add('hidden');
     feather.replace();
-
-    if (pageId === 'library') {
-        renderizarTabelaBiblioteca();
-    }
-    if (pageId === 'dashboard') {
-        renderizarTabelaCanais();
-    }
 }
 
-// --- Funções CRUD para Canais ---
+function closeModal(modalId) {
+    document.getElementById(modalId)?.classList.add('hidden');
+}
+
+// =================================================================================
+// PARTE 3: FUNÇÕES DE CRUD (CANAIS E VÍDEOS)
+// =================================================================================
 
 function removerCanal(id) {
     if (confirm("Tem certeza que deseja remover este canal?")) {
-        dadosSimulados.canais = dadosSimulados.canais.filter(canal => canal.id !== id);
+        dadosSimulados.canais = dadosSimulados.canais.filter(c => c.id !== id);
         renderizarDashboard();
     }
 }
 
-// --- Funções da Biblioteca ---
-
 function simularUpload() {
     const novoId = dadosSimulados.biblioteca.length > 0 ? Math.max(...dadosSimulados.biblioteca.map(v => v.id)) + 1 : 1;
-    const novoVideo = {
-        id: novoId,
-        nome: `novo_video_${novoId}.mp4`,
-        duracao: `${Math.floor(Math.random() * 10 + 5)}:${Math.floor(Math.random() * 60).toString().padStart(2, '0')}`,
-        status: "Na Biblioteca",
-        titulo: "",
-        descricao: "",
-        tags: ""
-    };
-    dadosSimulados.biblioteca.push(novoVideo);
+    dadosSimulados.biblioteca.push({ id: novoId, nome: `novo_video_${novoId}.mp4`, duracao: "00:00", status: "Na Biblioteca", titulo: "", descricao: "", tags: "" });
     renderizarTabelaBiblioteca();
     renderizarDashboard();
     alert("Novo vídeo simulado adicionado à biblioteca!");
@@ -132,22 +112,16 @@ function simularUpload() {
 
 function removerVideo(id) {
     if (confirm("Tem certeza que deseja remover este vídeo da biblioteca?")) {
-        dadosSimulados.biblioteca = dadosSimulados.biblioteca.filter(video => video.id !== id);
+        dadosSimulados.biblioteca = dadosSimulados.biblioteca.filter(v => v.id !== id);
         renderizarTabelaBiblioteca();
         renderizarDashboard();
     }
 }
 
-// --- Funções dos Modais (Pop-ups) ---
+// =================================================================================
+// PARTE 4: FUNÇÕES DOS MODAIS (POPUPS)
+// =================================================================================
 
-function closeModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.classList.add('hidden');
-    }
-}
-
-// Modal de Canais
 function openChannelModalForNew() {
     document.getElementById('channel-modal-title').textContent = 'Adicionar Novo Canal';
     document.getElementById('channel-form').reset();
@@ -158,7 +132,6 @@ function openChannelModalForNew() {
 function openChannelModalForEdit(id) {
     const canal = dadosSimulados.canais.find(c => c.id === id);
     if (!canal) return;
-
     document.getElementById('channel-modal-title').textContent = 'Editar Canal';
     document.getElementById('channel-edit-id').value = canal.id;
     document.getElementById('channel-name').value = canal.nome;
@@ -166,78 +139,102 @@ function openChannelModalForEdit(id) {
     document.getElementById('channel-modal').classList.remove('hidden');
 }
 
-// Modal de Agendamento
 function openScheduleModal(videoId) {
     const video = dadosSimulados.biblioteca.find(v => v.id === videoId);
     if (!video) return;
-
     document.getElementById('schedule-video-name').textContent = video.nome;
     document.getElementById('schedule-video-id').value = video.id;
-
     const channelSelect = document.getElementById('schedule-channel');
     channelSelect.innerHTML = '<option value="">Selecione um canal...</option>';
     dadosSimulados.canais.filter(c => c.status === 'Ativo').forEach(canal => {
-        const option = document.createElement('option');
-        option.value = canal.id;
-        option.textContent = canal.nome;
-        channelSelect.appendChild(option);
+        channelSelect.innerHTML += `<option value="${canal.id}">${canal.nome}</option>`;
     });
-
     document.getElementById('schedule-modal').classList.remove('hidden');
 }
 
-// Modal de Metadados
 function openMetadataModal(videoId) {
     const video = dadosSimulados.biblioteca.find(v => v.id === videoId);
     if (!video) return;
-
     document.getElementById('metadata-video-name').textContent = video.nome;
     document.getElementById('metadata-video-id').value = video.id;
     document.getElementById('metadata-title').value = video.titulo;
     document.getElementById('metadata-description').value = video.descricao;
     document.getElementById('metadata-tags').value = video.tags;
-
     document.getElementById('metadata-modal').classList.remove('hidden');
 }
 
-// --- Funções de Agendamento em Massa ---
+// =================================================================================
+// PARTE 5: AGENDAMENTO EM MASSA
+// =================================================================================
 
 function downloadModelo() {
-    // Usando ponto e vírgula como separador para compatibilidade com Excel em português
     const separador = ';';
-    const cabecalho = [
-        "nome_do_arquivo",
-        "titulo_do_video",
-        "descricao",
-        "tags",
-        "nome_do_canal",
-        "data_hora_postagem (YYYY-MM-DD HH:MM)"
-    ].join(separador);
-
-    const exemplo = [
-        "video_final_01.mp4",
-        "Meu Primeiro Vídeo",
-        "\"Esta é a descrição do meu primeiro vídeo, com vírgulas e tudo mais.\"", // Aspas para proteger vírgulas na descrição
-        "tag1, tag2, tag3",
-        "Canal Principal",
-        "2025-12-25 10:00"
-    ].join(separador);
-
-    // Adicionando o BOM (\uFEFF) no início para forçar o Excel a usar UTF-8
+    const cabecalho = ["nome_do_arquivo", "titulo_do_video", "descricao", "tags", "nome_do_canal", "data_hora_postagem (YYYY-MM-DD HH:MM)"].join(separador);
+    const exemplo = ["video_final_01.mp4", "Meu Primeiro Vídeo", "\"Descrição com vírgulas, para exemplo\"", "tag1, tag2", "Canal Principal", "2025-12-25 10:00"].join(separador);
     const conteudoCsv = "\uFEFF" + cabecalho + "\n" + exemplo;
-    
     const blob = new Blob([conteudoCsv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", "modelo_autopost.csv");
-    link.style.visibility = 'hidden';
+    link.href = URL.createObjectURL(blob);
+    link.download = "modelo_autopost.csv";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
 }
 
-// --- Event Listeners para Formulários ---
+function processarPlanilha(file) {
+    Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        delimiter: ";",
+        complete: function(results) {
+            const tbody = document.querySelector("#bulk-preview-table tbody");
+            tbody.innerHTML = '';
+            let linhasValidas = 0;
+
+            results.data.forEach(linha => {
+                const nomeArquivo = linha.nome_do_arquivo;
+                const nomeCanal = linha.nome_do_canal;
+                const dataHora = linha["data_hora_postagem (YYYY-MM-DD HH:MM)"];
+                
+                const video = dadosSimulados.biblioteca.find(v => v.nome === nomeArquivo);
+                const canal = dadosSimulados.canais.find(c => c.nome === nomeCanal && c.status === 'Ativo');
+                
+                let erro = '';
+                if (!video) erro = 'Vídeo não encontrado na biblioteca.';
+                else if (video.status !== 'Na Biblioteca') erro = 'Vídeo já agendado ou postado.';
+                else if (!canal) erro = 'Canal não encontrado ou inativo.';
+                else if (!dataHora || isNaN(new Date(dataHora).getTime())) erro = 'Data ou hora inválida.';
+
+                const statusClass = erro ? 'status-invalido' : 'status-valido';
+                const statusText = erro || 'Pronto para agendar';
+                if (!erro) linhasValidas++;
+
+                const tr = `
+                    <tr>
+                        <td>${nomeArquivo || 'N/A'}</td>
+                        <td>${nomeCanal || 'N/A'}</td>
+                        <td>${dataHora || 'N/A'}</td>
+                        <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                    </tr>`;
+                tbody.innerHTML += tr;
+            });
+
+            document.getElementById('bulk-results-section').classList.remove('hidden');
+            const btnConfirmar = document.querySelector('.bulk-confirm-footer button');
+            btnConfirmar.disabled = linhasValidas === 0;
+            feather.replace();
+        }
+    });
+}
+
+function confirmarAgendamentoEmMassa() {
+    alert("Lógica para confirmar e agendar todos os vídeos válidos será implementada aqui. Por enquanto, isso confirma que o fluxo funciona!");
+    // Futuramente, aqui faremos um loop nas linhas válidas e mudaremos o status dos vídeos.
+}
+
+// =================================================================================
+// PARTE 6: EVENT LISTENERS E INICIALIZAÇÃO
+// =================================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
     // Formulário de Canal
@@ -246,14 +243,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const id = document.getElementById('channel-edit-id').value;
         const nome = document.getElementById('channel-name').value;
         const youtubeId = document.getElementById('channel-id').value;
-
-        if (id) { // Editando
+        if (id) {
             const canal = dadosSimulados.canais.find(c => c.id == id);
-            if (canal) {
-                canal.nome = nome;
-                canal.youtubeId = youtubeId;
-            }
-        } else { // Criando
+            if (canal) { canal.nome = nome; canal.youtubeId = youtubeId; }
+        } else {
             const novoId = dadosSimulados.canais.length > 0 ? Math.max(...dadosSimulados.canais.map(c => c.id)) + 1 : 1;
             dadosSimulados.canais.push({ id: novoId, nome, youtubeId, horario: "N/A", status: "Ativo" });
         }
@@ -292,17 +285,11 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('csv-upload-input').addEventListener('change', function(e) {
         const file = e.target.files[0];
         if (file) {
-            alert(`Arquivo "${file.name}" selecionado. A lógica para processar o arquivo será implementada no próximo passo.`);
-            // Futuramente, aqui chamaremos a função para ler e processar o CSV.
-            e.target.value = ''; // Limpa o input para permitir selecionar o mesmo arquivo novamente
+            processarPlanilha(file);
+            e.target.value = '';
         }
     });
-});
 
-// --- Inicialização ---
-
-document.addEventListener('DOMContentLoaded', () => {
+    // Inicialização da aplicação
     navigateTo('dashboard');
-    renderizarDashboard();
-    feather.replace();
 });
