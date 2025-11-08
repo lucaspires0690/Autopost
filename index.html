@@ -8,7 +8,12 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-    <!-- CORREÇÃO: Carregando os scripts do Google com callbacks de inicialização -->
+
+    <!-- CORREÇÃO: Movendo nosso script para o <head> com 'defer' -->
+    <!-- Isso garante que as funções gapiLoaded e gisLoaded existam quando forem chamadas. -->
+    <script src="script.js" defer></script>
+
+    <!-- Scripts do Google que chamarão as funções no nosso script.js -->
     <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded( )"></script>
     <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded( )"></script>
 </head>
@@ -222,13 +227,15 @@
         </div>
     </div>
 
-    <!-- Scripts -->
+    <!-- Scripts do Firebase e bibliotecas -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
     <script src="https://unpkg.com/papaparse@5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/feather-icons"></script>
-    <script src="script.js"></script>
+    
+    <!-- Nosso script principal foi movido para o <head> -->
+
 </body>
 </html>
