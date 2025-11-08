@@ -1,5 +1,5 @@
 // ===================================================================
-// PASSO 1: CONFIGURAÇÃO E INICIALIZAÇÃO DO FIREBASE
+// CONFIGURAÇÕES E INICIALIZAÇÃO
 // ===================================================================
 
 const firebaseConfig = {
@@ -12,32 +12,75 @@ const firebaseConfig = {
   measurementId: "G-X4SBER5XVP"
 };
 
-firebase.initializeApp(firebaseConfig);
+const GOOGLE_API_KEY = "AIzaSyDrKMIudQUfLS0j4tG-kEdkVksvSnZaIPQ";
+const GOOGLE_CLIENT_ID = "191333777971-7vjn3tn7t09tfhtf6mf0funjgibep2tf.apps.googleusercontent.com";
+const YOUTUBE_SCOPES = 'https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly';
+
+firebase.initializeApp(firebaseConfig );
 const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();
 
 // ===================================================================
-// CONFIGURAÇÃO DA API DO GOOGLE (YOUTUBE)
-// ===================================================================
-
-const GOOGLE_API_KEY = "AIzaSyDrKMIudQUfLS0j4tG-kEdkVksvSnZaIPQ";
-const GOOGLE_CLIENT_ID = "191333777971-7vjn3tn7t09tfhtf6mf0funjgibep2tf.apps.googleusercontent.com";
-const YOUTUBE_SCOPES = 'https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly';
-
-let tokenClient;
-
-// ===================================================================
-// VARIÁVEIS GLOBAIS E ESTADO DA APLICAÇÃO
+// VARIÁVEIS GLOBAIS DE ESTADO
 // ===================================================================
 
 let canaisCache = [];
 let agendamentosCache = [];
 let canalAtual = null;
+let tokenClient;
+let gapiInited = false;
+let gisInited = false;
 
 // ===================================================================
-// LÓGICA DE AUTENTICAÇÃO (FIREBASE E GOOGLE )
+// LÓGICA DE AUTENTICAÇÃO (GOOGLE E FIREBASE)
 // ===================================================================
+
+// Chamado pelo <script> no HTML quando a biblioteca GAPI (cliente de API) está pronta.
+function gapiLoaded() {
+    gapi.load('client', () => {
+        gapi.client.init({
+            apiKey: GOOGLE_API_KEY,
+            discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest'],
+        } ).then(() => {
+            gapiInited = true;
+            console.log("GAPI client inicializado.");
+            maybeEnableAuthButton();
+        });
+    });
+}
+
+// Chamado pelo <script> no HTML quando a biblioteca GIS (autenticação) está pronta.
+function gisLoaded() {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: GOOGLE_CLIENT_ID,
+        scope: YOUTUBE_SCOPES,
+        callback: async (tokenResponse) => {
+            if (tokenResponse && tokenResponse.access_token) {
+                console.log("Token de acesso recebido. Buscando dados do canal...");
+                document.getElementById('btn-connect-youtube').textContent = 'Processando...';
+                document.getElementById('btn-connect-youtube').disabled = true;
+                await buscarEAdicionarCanal(tokenResponse);
+            }
+        },
+    });
+    gisInited = true;
+    console.log("GIS client (Token Client) inicializado.");
+    maybeEnableAuthButton();
+}
+
+// Habilita o botão de conexão somente se AMBAS as bibliotecas do Google estiverem prontas.
+function maybeEnableAuthButton() {
+    if (gapiInited && gisInited) {
+        console.log("Ambas as bibliotecas do Google estão prontas. Habilitando botão.");
+        const connectButton = document.getElementById('btn-connect-youtube');
+        if (connectButton) {
+            connectButton.disabled = false;
+            connectButton.innerHTML = '<i data-feather="youtube"></i> Conectar com o YouTube';
+            feather.replace();
+        }
+    }
+}
 
 auth.onAuthStateChanged(user => {
     const loginPage = document.getElementById('login-page');
@@ -47,7 +90,6 @@ auth.onAuthStateChanged(user => {
         mainContainer.style.display = 'flex';
         feather.replace();
         renderizarDashboard();
-        googleApiClientInit();
     } else {
         loginPage.style.display = 'block';
         mainContainer.style.display = 'none';
@@ -82,46 +124,6 @@ async function fazerLogout() {
     }
 }
 
-function googleApiClientInit() {
-    gapi.load('client', async () => {
-        await gapi.client.init({
-            apiKey: GOOGLE_API_KEY,
-            discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest'],
-        } );
-        console.log("Cliente da API do Google (gapi) inicializado.");
-        googleTokenClientInit();
-    });
-}
-
-function googleTokenClientInit() {
-    if (!auth.currentUser) return;
-    try {
-        tokenClient = google.accounts.oauth2.initTokenClient({
-            client_id: GOOGLE_CLIENT_ID,
-            scope: YOUTUBE_SCOPES,
-            callback: async (tokenResponse) => {
-                if (tokenResponse && tokenResponse.access_token) {
-                    console.log("Token de acesso recebido. Buscando dados do canal...");
-                    document.getElementById('btn-connect-youtube').textContent = 'Processando...';
-                    document.getElementById('btn-connect-youtube').disabled = true;
-                    await buscarEAdicionarCanal(tokenResponse);
-                }
-            },
-        });
-        console.log("Cliente de Token do Google (OAuth2) inicializado com SUCESSO.");
-        // CORREÇÃO: Habilita o botão APENAS quando o tokenClient estiver pronto.
-        const connectButton = document.getElementById('btn-connect-youtube');
-        if (connectButton) {
-            connectButton.disabled = false;
-            connectButton.innerHTML = '<i data-feather="youtube"></i> Conectar com o YouTube';
-            feather.replace();
-        }
-    } catch (error) {
-        console.error("Falha ao inicializar o Google Token Client:", error);
-        alert("Não foi possível carregar a integração com o Google. Verifique sua conexão e recarregue a página.");
-    }
-}
-
 function solicitarAcessoYouTube() {
     if (tokenClient) {
         tokenClient.requestAccessToken();
@@ -135,7 +137,7 @@ async function buscarEAdicionarCanal(tokenResponse) {
     try {
         gapi.client.setToken(tokenResponse);
         const response = await gapi.client.youtube.channels.list({
-            part: 'snippet,contentDetails,statistics',
+            part: 'snippet',
             mine: true,
         });
 
@@ -167,14 +169,15 @@ async function buscarEAdicionarCanal(tokenResponse) {
 }
 
 // ===================================================================
-// FUNÇÕES DE RENDERIZAÇÃO (DESENHAR NA TELA)
+// FUNÇÕES DE RENDERIZAÇÃO E MANIPULAÇÃO DE DADOS
 // ===================================================================
 
 async function renderizarDashboard() {
     const channelsTableBody = document.getElementById('channels-table').querySelector('tbody');
     channelsTableBody.innerHTML = '<tr><td colspan="5">Carregando canais...</td></tr>';
     try {
-        const snapshot = await db.collection('canais').orderBy('id').get();
+        // Ordenando por youtubeId para consistência, já que o 'id' numérico foi removido
+        const snapshot = await db.collection('canais').orderBy('youtubeId').get();
         canaisCache = snapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
         if (canaisCache.length === 0) {
             channelsTableBody.innerHTML = '<tr><td colspan="5">Nenhum canal encontrado.</td></tr>';
@@ -288,10 +291,6 @@ async function renderizarAgendamentos() {
     }
 }
 
-// ===================================================================
-// LÓGICA DE NAVEGAÇÃO E GERENCIAMENTO DE PÁGINAS
-// ===================================================================
-
 function navigateTo(pageId) {
     document.querySelectorAll('.main-content > .page').forEach(page => page.classList.remove('active'));
     document.getElementById(`${pageId}-page`).classList.add('active');
@@ -332,17 +331,9 @@ function switchSubpage(subpageId) {
     }
 }
 
-// ===================================================================
-// FUNÇÕES DE MANIPULAÇÃO DE DADOS (CRUD - Canais)
-// ===================================================================
-
 async function adicionarCanal(nome, youtubeId, tokenResponse) {
     try {
-        const ultimoCanalSnapshot = await db.collection('canais').orderBy('id', 'desc').limit(1).get();
-        const novoId = ultimoCanalSnapshot.empty ? 1 : ultimoCanalSnapshot.docs[0].data().id + 1;
-        
         const novoCanal = {
-            id: novoId,
             nome: nome,
             youtubeId: youtubeId,
             dataCriacao: new Date().toISOString().split('T')[0],
@@ -370,33 +361,20 @@ async function removerCanal(docId) {
     }
 }
 
-// ===================================================================
-// LÓGICA DE UPLOAD DE ARQUIVOS
-// ===================================================================
-
 function uploadFiles(files, path) {
     const fileArray = Array.from(files);
     fileArray.forEach(file => {
         const uploadTask = storage.ref(`${path}/${file.name}`).put(file);
         uploadTask.on('state_changed',
-            (snapshot) => {
-                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                console.log(`Upload de ${file.name}: ${progress.toFixed(2)}% concluído.`);
-            },
-            (error) => {
-                console.error(`Erro no upload de ${file.name}:`, error);
-            },
+            (snapshot) => {},
+            (error) => { console.error(`Erro no upload de ${file.name}:`, error); },
             () => {
-                console.log(`Upload de ${file.name} concluído com sucesso!`);
+                console.log(`Upload de ${file.name} concluído.`);
                 renderizarBiblioteca(canalAtual.docId);
             }
         );
     });
 }
-
-// ===================================================================
-// LÓGICA DE AGENDAMENTO EM MASSA (CSV e CRUD)
-// ===================================================================
 
 function logCsvStatus(message, type = 'info') {
     const statusDiv = document.getElementById('csv-status');
@@ -424,7 +402,7 @@ async function processarCSV(file) {
 
             for (const agendamento of results.data) {
                 if (!agendamento.nome_video || !agendamento.data_publicacao || !agendamento.hora_publicacao) {
-                    logCsvStatus(`ERRO: Linha inválida. Faltam dados obrigatórios. ${JSON.stringify(agendamento)}`, 'error');
+                    logCsvStatus(`ERRO: Linha inválida. ${JSON.stringify(agendamento)}`, 'error');
                     continue;
                 }
 
@@ -444,21 +422,20 @@ async function processarCSV(file) {
 
                 const docRef = agendamentosRef.doc();
                 batch.set(docRef, novoAgendamento);
-                logCsvStatus(`Agendamento para "${agendamento.titulo}" preparado.`);
             }
 
             try {
                 await batch.commit();
-                logCsvStatus(`SUCESSO: ${results.data.length} agendamentos foram salvos no banco de dados!`, 'success');
+                logCsvStatus(`SUCESSO: ${results.data.length} agendamentos salvos!`, 'success');
                 renderizarAgendamentos();
             } catch (error) {
                 console.error("Erro ao salvar agendamentos em lote: ", error);
-                logCsvStatus(`ERRO FATAL: Não foi possível salvar os agendamentos no banco de dados.`, 'error');
+                logCsvStatus(`ERRO FATAL ao salvar no banco de dados.`, 'error');
             }
         },
         error: (error) => {
             console.error("Erro ao parsear CSV:", error);
-            logCsvStatus(`ERRO: Não foi possível ler o arquivo CSV. Verifique o formato.`, 'error');
+            logCsvStatus(`ERRO: Não foi possível ler o arquivo CSV.`, 'error');
         }
     });
 }
@@ -537,22 +514,14 @@ async function limparTodosAgendamentos() {
 }
 
 // ===================================================================
-// MODAIS E INTERAÇÕES DA UI
+// MODAIS E EVENT LISTENERS
 // ===================================================================
 
 function openModal(modalId) { document.getElementById(modalId).style.display = 'flex'; }
 function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
 
 function openAddChannelModal() {
-    // CORREÇÃO: Desabilita o botão e mostra 'Carregando...' até a API do Google estar pronta.
-    const connectButton = document.getElementById('btn-connect-youtube');
-    if (connectButton) {
-        connectButton.disabled = true;
-        connectButton.textContent = 'Carregando...';
-    }
     openModal('channel-modal');
-    // A função googleTokenClientInit() irá reabilitar o botão quando estiver pronta.
-    googleTokenClientInit();
 }
 
 function openEditScheduleModal(docId) {
@@ -579,29 +548,18 @@ function openEditScheduleModal(docId) {
     openModal('schedule-modal');
 }
 
-// ===================================================================
-// EVENT LISTENERS (OUVINTES DE EVENTOS)
-// ===================================================================
-
 document.addEventListener('DOMContentLoaded', () => {
-    // Formulário de Login
     const loginForm = document.getElementById('login-form');
     if (loginForm) {
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
-            const email = document.getElementById('login-email').value;
-            const password = document.getElementById('login-password').value;
-            fazerLogin(email, password);
+            fazerLogin(document.getElementById('login-email').value, document.getElementById('login-password').value);
         });
     }
 
-    // Botão de Logout
     const btnLogout = document.getElementById('btn-logout');
-    if (btnLogout) {
-        btnLogout.addEventListener('click', fazerLogout);
-    }
+    if (btnLogout) btnLogout.addEventListener('click', fazerLogout);
 
-    // Navegação principal da Sidebar
     document.querySelectorAll('.sidebar-nav .nav-item').forEach(item => {
         item.addEventListener('click', (e) => {
             e.preventDefault();
@@ -609,19 +567,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Botão para adicionar canal
     const btnAddChannel = document.getElementById('btn-add-channel');
-    if (btnAddChannel) {
-        btnAddChannel.addEventListener('click', openAddChannelModal);
-    }
+    if (btnAddChannel) btnAddChannel.addEventListener('click', openAddChannelModal);
 
-    // Botão para conectar com o YouTube
     const btnConnectYoutube = document.getElementById('btn-connect-youtube');
-    if (btnConnectYoutube) {
-        btnConnectYoutube.addEventListener('click', solicitarAcessoYouTube);
-    }
+    if (btnConnectYoutube) btnConnectYoutube.addEventListener('click', solicitarAcessoYouTube);
 
-    // Formulário do modal de agendamento (Editar)
     const scheduleForm = document.getElementById('schedule-form');
     if (scheduleForm) {
         scheduleForm.addEventListener('submit', (e) => {
@@ -640,21 +591,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Botão de voltar para o dashboard
     const btnBack = document.getElementById('btn-back-to-dashboard');
-    if (btnBack) {
-        btnBack.addEventListener('click', () => navigateTo('dashboard'));
-    }
+    if (btnBack) btnBack.addEventListener('click', () => navigateTo('dashboard'));
 
-    // Botões de upload na biblioteca
     const btnUploadVideos = document.getElementById('btn-upload-videos');
     const videoFileInput = document.getElementById('video-file-input');
     if (btnUploadVideos) {
         btnUploadVideos.addEventListener('click', () => videoFileInput.click());
         videoFileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                uploadFiles(e.target.files, `canais/${canalAtual.docId}/videos`);
-            }
+            if (e.target.files.length > 0) uploadFiles(e.target.files, `canais/${canalAtual.docId}/videos`);
         });
     }
 
@@ -663,18 +608,14 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnUploadThumbnails) {
         btnUploadThumbnails.addEventListener('click', () => thumbnailFileInput.click());
         thumbnailFileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                uploadFiles(e.target.files, `canais/${canalAtual.docId}/thumbnails`);
-            }
+            if (e.target.files.length > 0) uploadFiles(e.target.files, `canais/${canalAtual.docId}/thumbnails`);
         });
     }
     
-    // Navegação das abas da biblioteca
     document.querySelectorAll('.tab-button').forEach(button => {
         button.addEventListener('click', () => switchTab(button.dataset.tab));
     });
 
-    // Navegação das subpáginas do canal
     document.querySelectorAll('.channel-nav-item').forEach(item => {
         item.addEventListener('click', (e) => {
             e.preventDefault();
@@ -682,41 +623,27 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Botão de importar CSV
     const btnImportCsv = document.getElementById('btn-import-csv');
     const csvFileInput = document.getElementById('csv-file-input');
     if(btnImportCsv) {
         btnImportCsv.addEventListener('click', () => csvFileInput.click());
         csvFileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                processarCSV(e.target.files[0]);
-            }
+            if (e.target.files.length > 0) processarCSV(e.target.files[0]);
         });
     }
 
-    // Botão de baixar modelo CSV
     const btnDownloadTemplate = document.getElementById('btn-download-csv-template');
-    if (btnDownloadTemplate) {
-        btnDownloadTemplate.addEventListener('click', baixarModeloCSV);
-    }
+    if (btnDownloadTemplate) btnDownloadTemplate.addEventListener('click', baixarModeloCSV);
 
-    // Botão para limpar todos os agendamentos
     const btnClearSchedules = document.getElementById('btn-clear-schedules');
-    if (btnClearSchedules) {
-        btnClearSchedules.addEventListener('click', limparTodosAgendamentos);
-    }
+    if (btnClearSchedules) btnClearSchedules.addEventListener('click', limparTodosAgendamentos);
 
-    // Fechar modais
     document.querySelectorAll('.modal .close-button').forEach(button => {
-        button.addEventListener('click', () => {
-            closeModal(button.closest('.modal').id);
-        });
+        button.addEventListener('click', () => closeModal(button.closest('.modal').id));
     });
     window.addEventListener('click', (event) => {
         document.querySelectorAll('.modal').forEach(modal => {
-            if (event.target == modal) {
-                closeModal(modal.id);
-            }
+            if (event.target == modal) closeModal(modal.id);
         });
     });
 });
