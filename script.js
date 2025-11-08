@@ -18,15 +18,25 @@ const db = firebase.firestore();
 const storage = firebase.storage();
 
 // ===================================================================
+// CONFIGURAÇÃO DA API DO GOOGLE (YOUTUBE)
+// ===================================================================
+
+const GOOGLE_API_KEY = "AIzaSyDrKMIudQUfLS0j4tG-kEdkVksvSnZaIPQ"; // Reutilizando a chave de API do Firebase
+const GOOGLE_CLIENT_ID = "191333777971-7vjn3tn7t09tfhtf6mf0funjgibep2tf.apps.googleusercontent.com";
+const YOUTUBE_SCOPES = 'https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly';
+
+let tokenClient;
+
+// ===================================================================
 // VARIÁVEIS GLOBAIS E ESTADO DA APLICAÇÃO
 // ===================================================================
 
 let canaisCache = [];
-let agendamentosCache = []; // Cache para os agendamentos
+let agendamentosCache = [];
 let canalAtual = null;
 
 // ===================================================================
-// LÓGICA DE AUTENTICAÇÃO E CONTROLE DE ACESSO
+// LÓGICA DE AUTENTICAÇÃO (FIREBASE E GOOGLE )
 // ===================================================================
 
 auth.onAuthStateChanged(user => {
@@ -37,6 +47,7 @@ auth.onAuthStateChanged(user => {
         mainContainer.style.display = 'flex';
         feather.replace();
         renderizarDashboard();
+        googleApiClientInit(); // Inicializa o cliente da API do Google
     } else {
         loginPage.style.display = 'block';
         mainContainer.style.display = 'none';
@@ -61,8 +72,84 @@ async function fazerLogin(email, password) {
 async function fazerLogout() {
     try {
         await auth.signOut();
+        if (gapi.client.getToken()) {
+            google.accounts.oauth2.revoke(gapi.client.getToken().access_token, () => {
+                console.log('Token do Google revogado.');
+            });
+        }
     } catch (error) {
         console.error("Erro ao fazer logout:", error);
+    }
+}
+
+function googleApiClientInit() {
+    gapi.load('client', async () => {
+        await gapi.client.init({
+            apiKey: GOOGLE_API_KEY,
+            discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest'],
+        } );
+        console.log("Cliente da API do Google (gapi) inicializado.");
+        googleTokenClientInit(); // Prepara o cliente de token logo em seguida
+    });
+}
+
+function googleTokenClientInit() {
+    if (!auth.currentUser) return;
+    tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: GOOGLE_CLIENT_ID,
+        scope: YOUTUBE_SCOPES,
+        callback: async (tokenResponse) => {
+            if (tokenResponse && tokenResponse.access_token) {
+                console.log("Token de acesso recebido. Buscando dados do canal...");
+                await buscarEAdicionarCanal(tokenResponse);
+            }
+        },
+    });
+    console.log("Cliente de Token do Google (OAuth2) inicializado.");
+}
+
+function solicitarAcessoYouTube() {
+    if (tokenClient) {
+        tokenClient.requestAccessToken();
+    } else {
+        console.error("Cliente de token do Google não inicializado.");
+        alert("Ocorreu um erro ao iniciar a conexão com o Google. Tente recarregar a página.");
+    }
+}
+
+async function buscarEAdicionarCanal(tokenResponse) {
+    try {
+        gapi.client.setToken(tokenResponse);
+        const response = await gapi.client.youtube.channels.list({
+            part: 'snippet,contentDetails,statistics',
+            mine: true,
+        });
+
+        if (response.result.items && response.result.items.length > 0) {
+            const canal = response.result.items[0];
+            const youtubeId = canal.id;
+            const nomeCanal = canal.snippet.title;
+
+            console.log(`Canal encontrado: ${nomeCanal} (ID: ${youtubeId})`);
+
+            const snapshot = await db.collection('canais').where('youtubeId', '==', youtubeId).get();
+            if (!snapshot.empty) {
+                alert(`O canal "${nomeCanal}" já foi adicionado.`);
+                closeModal('channel-modal');
+                return;
+            }
+            
+            // A função adicionarCanal agora lida com o token
+            await adicionarCanal(nomeCanal, youtubeId, tokenResponse);
+            
+        } else {
+            alert("Nenhum canal do YouTube encontrado para esta conta do Google.");
+        }
+    } catch (error) {
+        console.error("Erro ao buscar canal do YouTube:", error);
+        alert("Não foi possível obter os dados do canal. Verifique o console para mais detalhes.");
+    } finally {
+        closeModal('channel-modal');
     }
 }
 
@@ -85,17 +172,15 @@ async function renderizarDashboard() {
             const tr = document.createElement('tr');
             const dataFormatada = canal.dataCriacao ? new Date(canal.dataCriacao).toLocaleDateString('pt-BR', { timeZone: 'UTC' }) : 'N/A';
             tr.innerHTML = `
-                <td>#${canal.id}</td>
+                <td>${canal.youtubeId || 'N/A'}</td>
                 <td>${canal.nome}</td>
                 <td>${dataFormatada}</td>
                 <td><span class="status ${canal.status ? canal.status.toLowerCase() : ''}">${canal.status || 'N/A'}</span></td>
                 <td class="actions">
                     <button class="btn-icon-table" title="Gerenciar Canal" onclick="gerenciarCanal('${canal.docId}')"><i data-feather="arrow-right-circle"></i></button>
-                    <button class="btn-icon-table edit-icon" title="Editar" onclick="openEditChannelModal('${canal.docId}')"><i data-feather="edit"></i></button>
                     <button class="btn-icon-table remove-icon" title="Remover" onclick="removerCanal('${canal.docId}')"><i data-feather="trash-2"></i></button>
                 </td>
             `;
-            channelsTableBody.appendChild(tr);
         });
         feather.replace();
     } catch (error) {
@@ -238,34 +323,26 @@ function switchSubpage(subpageId) {
 // FUNÇÕES DE MANIPULAÇÃO DE DADOS (CRUD - Canais)
 // ===================================================================
 
-async function adicionarCanal(nome, youtubeId) {
+async function adicionarCanal(nome, youtubeId, tokenResponse) {
     try {
         const ultimoCanalSnapshot = await db.collection('canais').orderBy('id', 'desc').limit(1).get();
         const novoId = ultimoCanalSnapshot.empty ? 1 : ultimoCanalSnapshot.docs[0].data().id + 1;
-        await db.collection('canais').add({
+        
+        const novoCanal = {
             id: novoId,
             nome: nome,
             youtubeId: youtubeId,
             dataCriacao: new Date().toISOString().split('T')[0],
-            status: 'Ativo'
-        });
+            status: 'Ativo',
+            tokenData: tokenResponse 
+        };
+
+        await db.collection('canais').add(novoCanal);
+        
+        alert(`Canal "${nome}" adicionado com sucesso!`);
         renderizarDashboard();
-        closeModal('channel-modal');
     } catch (error) {
         console.error("Erro ao adicionar canal: ", error);
-    }
-}
-
-async function editarCanal(docId, nome, youtubeId) {
-    try {
-        await db.collection('canais').doc(docId).update({
-            nome: nome,
-            youtubeId: youtubeId
-        });
-        renderizarDashboard();
-        closeModal('channel-modal');
-    } catch (error) {
-        console.error("Erro ao editar canal: ", error);
     }
 }
 
@@ -388,7 +465,6 @@ function baixarModeloCSV() {
 
 async function editarAgendamento(docId, dados) {
     try {
-        // CORREÇÃO APLICADA AQUI: Usando os nomes corretos das variáveis (camelCase)
         const dataHora = new Date(`${dados.dataPublicacao}T${dados.horaPublicacao}`);
         
         const dadosParaSalvar = {
@@ -455,19 +531,6 @@ function openModal(modalId) { document.getElementById(modalId).style.display = '
 function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
 
 function openAddChannelModal() {
-    document.getElementById('channel-form').reset();
-    document.getElementById('modal-title').textContent = 'Adicionar Novo Canal';
-    document.getElementById('channel-id-input').value = '';
-    openModal('channel-modal');
-}
-
-function openEditChannelModal(docId) {
-    const canal = canaisCache.find(c => c.docId === docId);
-    if (!canal) return;
-    document.getElementById('modal-title').textContent = 'Editar Canal';
-    document.getElementById('channel-id-input').value = docId;
-    document.getElementById('channel-name').value = canal.nome;
-    document.getElementById('channel-youtube-id').value = canal.youtubeId;
     openModal('channel-modal');
 }
 
@@ -531,20 +594,10 @@ document.addEventListener('DOMContentLoaded', () => {
         btnAddChannel.addEventListener('click', openAddChannelModal);
     }
 
-    // Formulário do modal de canal (Adicionar/Editar)
-    const channelForm = document.getElementById('channel-form');
-    if (channelForm) {
-        channelForm.addEventListener('submit', (e) => {
-            e.preventDefault();
-            const docId = document.getElementById('channel-id-input').value;
-            const nome = document.getElementById('channel-name').value;
-            const youtubeId = document.getElementById('channel-youtube-id').value;
-            if (docId) {
-                editarCanal(docId, nome, youtubeId);
-            } else {
-                adicionarCanal(nome, youtubeId);
-            }
-        });
+    // Botão para conectar com o YouTube
+    const btnConnectYoutube = document.getElementById('btn-connect-youtube');
+    if (btnConnectYoutube) {
+        btnConnectYoutube.addEventListener('click', solicitarAcessoYouTube);
     }
 
     // Formulário do modal de agendamento (Editar)
