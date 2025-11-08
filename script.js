@@ -103,7 +103,6 @@ async function renderizarDashboard() {
     }
 }
 
-// ***** FUNÇÃO DE RENDERIZAÇÃO DA BIBLIOTECA MODIFICADA PARA ABAS *****
 async function renderizarBiblioteca(canalId) {
     const videosTableBody = document.getElementById('videos-table').querySelector('tbody');
     const thumbnailsTableBody = document.getElementById('thumbnails-table').querySelector('tbody');
@@ -119,7 +118,6 @@ async function renderizarBiblioteca(canalId) {
             thumbnailsRef.listAll()
         ]);
 
-        // Renderiza a tabela de vídeos
         if (videosRes.items.length === 0) {
             videosTableBody.innerHTML = '<tr><td colspan="3">Nenhum vídeo encontrado.</td></tr>';
         } else {
@@ -137,7 +135,6 @@ async function renderizarBiblioteca(canalId) {
             });
         }
 
-        // Renderiza a tabela de thumbnails
         if (thumbnailsRes.items.length === 0) {
             thumbnailsTableBody.innerHTML = '<tr><td colspan="3">Nenhuma thumbnail encontrada.</td></tr>';
         } else {
@@ -180,9 +177,9 @@ function gerenciarCanal(docId) {
     document.getElementById('channel-management-title').textContent = `Gerenciamento: ${canalAtual.nome}`;
     navigateTo('channel-management');
     renderizarBiblioteca(canalAtual.docId);
+    switchTab('videos'); // Garante que a aba de vídeos seja a padrão
 }
 
-// ***** NOVA FUNÇÃO PARA CONTROLAR AS ABAS *****
 function switchTab(tabName) {
     document.querySelectorAll('.tab-button').forEach(button => {
         button.classList.toggle('active', button.dataset.tab === tabName);
@@ -272,3 +269,72 @@ function openAddChannelModal() {
 function openEditChannelModal(docId) {
     const canal = canaisCache.find(c => c.docId === docId);
     if (!canal) return;
+    document.getElementById('modal-title').textContent = 'Editar Canal';
+    document.getElementById('channel-id-input').value = canal.docId;
+    document.getElementById('channel-name').value = canal.nome;
+    document.getElementById('channel-youtube-id').value = canal.youtubeId;
+    openModal('channel-modal');
+}
+
+// ===================================================================
+// EVENT LISTENERS (OUVINTES DE EVENTOS) - SEÇÃO CORRIGIDA
+// ===================================================================
+
+document.addEventListener('DOMContentLoaded', () => {
+    // --- EVENTOS DE AUTENTICAÇÃO ---
+    const loginForm = document.getElementById('login-form');
+    loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+        fazerLogin(email, password);
+    });
+
+    const btnLogout = document.getElementById('btn-logout');
+    btnLogout.addEventListener('click', fazerLogout);
+
+    // --- EVENTOS DE NAVEGAÇÃO PRINCIPAL ---
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            navigateTo(item.dataset.page);
+        });
+    });
+
+    document.getElementById('btn-add-channel').addEventListener('click', openAddChannelModal);
+    document.getElementById('btn-back-to-dashboard').addEventListener('click', () => navigateTo('dashboard'));
+
+    // --- EVENTOS DO MODAL DE CANAL ---
+    document.getElementById('channel-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const docId = document.getElementById('channel-id-input').value;
+        const nome = document.getElementById('channel-name').value;
+        const youtubeId = document.getElementById('channel-youtube-id').value;
+
+        if (docId) {
+            editarCanal(docId, nome, youtubeId);
+        } else {
+            adicionarCanal(nome, youtubeId);
+        }
+        closeModal('channel-modal');
+    });
+
+    // --- EVENTOS DE UPLOAD ---
+    const btnUploadVideos = document.getElementById('btn-upload-videos');
+    const videoFileInput = document.getElementById('video-file-input');
+    const btnUploadThumbnails = document.getElementById('btn-upload-thumbnails');
+    const thumbnailFileInput = document.getElementById('thumbnail-file-input');
+
+    btnUploadVideos.addEventListener('click', () => videoFileInput.click());
+    videoFileInput.addEventListener('change', (e) => uploadFiles(e.target.files, 'video'));
+
+    btnUploadThumbnails.addEventListener('click', () => thumbnailFileInput.click());
+    thumbnailFileInput.addEventListener('change', (e) => uploadFiles(e.target.files, 'thumbnail'));
+
+    // --- EVENTOS DAS ABAS DA BIBLIOTECA ---
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.addEventListener('click', () => {
+            switchTab(button.dataset.tab);
+        });
+    });
+});
