@@ -143,17 +143,18 @@ async function renderizarBiblioteca(canalId) {
         feather.replace();
     } catch (error) {
         console.error("Erro ao listar arquivos da biblioteca:", error);
-        videosTableBody.innerHTML = '<tr><td colspan="3">Erro ao carregar vídeos.</td></tr>';
-        thumbnailsTableBody.innerHTML = '<tr><td colspan="3">Erro ao carregar thumbnails.</td></tr>';
+        videosTableBody.innerHTML = '<tr><td colspan="3">Erro ao carregar vídeos. Verifique o console (F12).</td></tr>';
+        thumbnailsTableBody.innerHTML = '<tr><td colspan="3">Erro ao carregar thumbnails. Verifique o console (F12).</td></tr>';
     }
 }
 
-async function renderizarAgendamentos(canalId) {
+async function renderizarAgendamentos() {
+    if (!canalAtual) return;
     const schedulesTableBody = document.getElementById('schedules-table').querySelector('tbody');
     schedulesTableBody.innerHTML = '<tr><td colspan="4">Carregando agendamentos...</td></tr>';
     try {
         const snapshot = await db.collection('agendamentos')
-            .where('canalId', '==', canalId)
+            .where('canalId', '==', canalAtual.docId)
             .orderBy('dataHoraPublicacao', 'asc')
             .get();
         
@@ -229,7 +230,7 @@ function switchSubpage(subpageId) {
         renderizarBiblioteca(canalAtual.docId);
         switchTab('videos');
     } else if (subpageId === 'agendamento') {
-        renderizarAgendamentos(canalAtual.docId);
+        renderizarAgendamentos();
     }
 }
 
@@ -359,7 +360,7 @@ async function processarCSV(file) {
             try {
                 await batch.commit();
                 logCsvStatus(`SUCESSO: ${results.data.length} agendamentos foram salvos no banco de dados!`, 'success');
-                renderizarAgendamentos(canalAtual.docId);
+                renderizarAgendamentos();
             } catch (error) {
                 console.error("Erro ao salvar agendamentos em lote: ", error);
                 logCsvStatus(`ERRO FATAL: Não foi possível salvar os agendamentos no banco de dados.`, 'error');
@@ -399,7 +400,7 @@ async function editarAgendamento(docId, dados) {
         };
 
         await db.collection('agendamentos').doc(docId).update(dadosParaSalvar);
-        renderizarAgendamentos(canalAtual.docId);
+        renderizarAgendamentos();
         closeModal('schedule-modal');
     } catch (error) {
         console.error("Erro ao editar agendamento: ", error);
@@ -411,7 +412,7 @@ async function removerAgendamento(docId) {
     if (confirm('Tem certeza que deseja remover este agendamento?')) {
         try {
             await db.collection('agendamentos').doc(docId).delete();
-            renderizarAgendamentos(canalAtual.docId);
+            renderizarAgendamentos();
         } catch (error) {
             console.error("Erro ao remover agendamento: ", error);
             alert("Não foi possível remover o agendamento.");
@@ -597,4 +598,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnDownloadTemplate) {
         btnDownloadTemplate.addEventListener('click', baixarModeloCSV);
     }
+
+    // Fechar modais
+    document.querySelectorAll('.modal .close-button').forEach(button => {
+        button.addEventListener('click', () => {
+            closeModal(button.closest('.modal').id);
+        });
+    });
+    window.addEventListener('click', (event) => {
+        document.querySelectorAll('.modal').forEach(modal => {
+            if (event.target == modal) {
+                closeModal(modal.id);
+            }
+        });
+    });
 });
