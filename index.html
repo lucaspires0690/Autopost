@@ -18,6 +18,7 @@
             <ul class="nav-menu">
                 <li><a href="#" class="nav-link active" onclick="navigateTo('dashboard' )"><i data-feather="home"></i><span>Dashboard</span></a></li>
                 <li><a href="#" class="nav-link" onclick="navigateTo('library')"><i data-feather="film"></i><span>Biblioteca</span></a></li>
+                <li><a href="#" class="nav-link" onclick="navigateTo('bulk-schedule')"><i data-feather="upload"></i><span>Agend. em Massa</span></a></li>
                 <li><a href="#" class="nav-link" onclick="navigateTo('calendar')"><i data-feather="calendar"></i><span>Calendário</span></a></li>
                 <li><a href="#" class="nav-link" onclick="navigateTo('settings')"><i data-feather="settings"></i><span>Configurações</span></a></li>
             </ul>
@@ -103,6 +104,25 @@
                                 <!-- Linhas de vídeos serão inseridas aqui -->
                             </tbody>
                         </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Seção de Agendamento em Massa -->
+            <section id="bulk-schedule" class="page">
+                <div class="main-header">
+                    <h1>Agendamento em Massa</h1>
+                </div>
+                <div class="content-section">
+                    <h2>Importar Planilha de Agendamento</h2>
+                    <p class="instrucao">Para agendar múltiplos vídeos, faça o upload de uma planilha no formato .csv contendo as informações de cada vídeo. Certifique-se de que os nomes dos arquivos de vídeo e thumbnail na planilha correspondem aos arquivos na sua biblioteca.</p>
+                    <div class="upload-area">
+                        <i data-feather="file-text" class="upload-icon"></i>
+                        <p>Arraste e solte sua planilha aqui, ou</p>
+                        <button class="btn btn-secondary">Selecione o Arquivo</button>
+                    </div>
+                    <div class="modelo-download">
+                        <a href="#" class="link-modelo">Baixar modelo da planilha (.csv)</a>
                     </div>
                 </div>
             </section>

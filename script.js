@@ -23,7 +23,6 @@ function renderizarTabelaCanais() {
 
     dadosSimulados.canais.forEach(canal => {
         const statusClass = canal.status === 'Ativo' ? 'status-ativo' : 'status-inativo';
-        // CORREÇÃO APLICADA AQUI: Adicionadas as classes 'edit-icon' e 'remove-icon'
         const tr = `
             <tr>
                 <td>${canal.nome}</td>
@@ -82,10 +81,19 @@ function renderizarDashboard() {
 
 function navigateTo(pageId) {
     document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
-    document.getElementById(pageId).classList.add('active');
+    const targetPage = document.getElementById(pageId);
+    if (targetPage) {
+        targetPage.classList.add('active');
+    }
 
     document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
-    document.querySelector(`.nav-link[onclick="navigateTo('${pageId}')"]`).classList.add('active');
+    const targetLink = document.querySelector(`.nav-link[onclick="navigateTo('${pageId}')"]`);
+    if (targetLink) {
+        targetLink.classList.add('active');
+    }
+
+    // Atualiza os ícones para garantir que estão visíveis na nova página
+    feather.replace();
 
     if (pageId === 'library') {
         renderizarTabelaBiblioteca();

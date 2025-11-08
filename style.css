@@ -173,7 +173,6 @@ body {
     background-color: var(--cor-fundo);
 }
 
-/* CORREÇÃO FINAL APLICADA AQUI: i -> svg */
 .btn-icon svg {
     color: var(--cor-secundaria);
     transition: color 0.2s;
@@ -214,7 +213,7 @@ body {
     border-radius: 50%;
     display: flex;
     justify-content: center;
-    align-items.center;
+    align-items: center;
 }
 
 .stat-icon svg {
@@ -411,4 +410,53 @@ tbody tr:hover {
     border-top: 1px solid var(--cor-borda);
     padding-top: 20px;
     margin-top: 10px;
+}
+
+/* --- Seção de Agendamento em Massa --- */
+.instrucao {
+    color: var(--cor-secundaria);
+    line-height: 1.6;
+    margin-bottom: 30px;
+}
+
+.upload-area {
+    border: 2px dashed var(--cor-borda);
+    border-radius: 8px;
+    padding: 40px;
+    text-align: center;
+    background-color: var(--cor-sidebar);
+    cursor: pointer;
+    transition: border-color 0.2s, background-color 0.2s;
+}
+
+.upload-area:hover {
+    border-color: var(--cor-azul-primario);
+    background-color: var(--cor-fundo);
+}
+
+.upload-icon {
+    width: 48px;
+    height: 48px;
+    color: var(--cor-cinza);
+    margin-bottom: 15px;
+}
+
+.upload-area p {
+    margin-bottom: 15px;
+    font-weight: 500;
+}
+
+.modelo-download {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.link-modelo {
+    color: var(--cor-azul-primario);
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.link-modelo:hover {
+    text-decoration: underline;
 }
