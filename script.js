@@ -6,7 +6,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyDrKMIudQUfLS0j4tG-kEdkVksvSnZaIPQ",
   authDomain: "autopost-477601.firebaseapp.com",
   projectId: "autopost-477601",
-  storageBucket: "autopost-477601.appspot.com", // ATENÇÃO: O domínio do Storage é diferente!
+  storageBucket: "autopost-477601.firebasestorage.app", // Corrigido para o novo bucket
   messagingSenderId: "191333777971",
   appId: "1:191333777971:web:5aab90e1f1e39d19f61946",
   measurementId: "G-X4SBER5XVP"
@@ -14,15 +14,64 @@ const firebaseConfig = {
 
 // Inicializa os serviços do Firebase
 firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth(); // Novo: serviço de autenticação
 const db = firebase.firestore();
-const storage = firebase.storage(); // Nova inicialização para o Storage
+const storage = firebase.storage();
 
 // ===================================================================
 // VARIÁVEIS GLOBAIS E ESTADO DA APLICAÇÃO
 // ===================================================================
 
 let canaisCache = [];
-let canalAtual = null; // Guarda o objeto do canal que está sendo gerenciado
+let canalAtual = null;
+
+// ===================================================================
+// LÓGICA DE AUTENTICAÇÃO E CONTROLE DE ACESSO
+// ===================================================================
+
+// Função principal que verifica o estado do login
+auth.onAuthStateChanged(user => {
+    const loginPage = document.getElementById('login-page');
+    const mainContainer = document.querySelector('.container');
+
+    if (user) {
+        // Usuário está logado
+        loginPage.style.display = 'none';
+        mainContainer.style.display = 'flex';
+        feather.replace(); // Recarrega os ícones
+        renderizarDashboard(); // Carrega os dados do dashboard
+    } else {
+        // Usuário NÃO está logado
+        loginPage.style.display = 'block';
+        mainContainer.style.display = 'none';
+    }
+});
+
+async function fazerLogin(email, password) {
+    const errorMessage = document.getElementById('login-error-message');
+    errorMessage.textContent = ''; // Limpa mensagens de erro antigas
+    try {
+        await auth.signInWithEmailAndPassword(email, password);
+        // O onAuthStateChanged vai cuidar de mostrar o dashboard
+    } catch (error) {
+        console.error("Erro de login:", error.code);
+        if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+            errorMessage.textContent = 'E-mail ou senha inválidos.';
+        } else {
+            errorMessage.textContent = 'Ocorreu um erro. Tente novamente.';
+        }
+    }
+}
+
+async function fazerLogout() {
+    try {
+        await auth.signOut();
+        // O onAuthStateChanged vai cuidar de mostrar a tela de login
+    } catch (error) {
+        console.error("Erro ao fazer logout:", error);
+    }
+}
+
 
 // ===================================================================
 // FUNÇÕES DE RENDERIZAÇÃO (DESENHAR NA TELA)
@@ -71,7 +120,7 @@ async function renderizarDashboard() {
 // ===================================================================
 
 function navigateTo(pageId) {
-    document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+    document.querySelectorAll('.main-content .page').forEach(page => page.classList.remove('active'));
     document.getElementById(`${pageId}-page`).classList.add('active');
     document.querySelectorAll('.nav-item').forEach(item => {
         item.classList.toggle('active', item.dataset.page === pageId);
@@ -83,7 +132,6 @@ function gerenciarCanal(docId) {
     if (!canalAtual) return;
     document.getElementById('channel-management-title').textContent = `Gerenciamento: ${canalAtual.nome}`;
     navigateTo('channel-management');
-    // Futuramente, aqui carregaremos os vídeos deste canal
 }
 
 // ===================================================================
@@ -140,20 +188,21 @@ function uploadFiles(fileList, tipo) {
         alert("Erro: Nenhum canal selecionado para o upload.");
         return;
     }
+    if (!auth.currentUser) {
+        alert("Erro: Você não está autenticado. Faça o login novamente.");
+        return;
+    }
 
     const pasta = tipo === 'video' ? 'videos' : 'thumbnails';
     
-    // Transforma a FileList em um Array para usar o forEach
     Array.from(fileList).forEach(file => {
         console.log(`Iniciando upload de ${file.name}...`);
         
-        // Cria o caminho no Storage: canais/{id_do_canal}/videos/{nome_do_arquivo}
         const storagePath = `canais/${canalAtual.docId}/${pasta}/${file.name}`;
         const storageRef = storage.ref(storagePath);
 
         const task = storageRef.put(file);
 
-        // Acompanha o progresso do upload
         task.on('state_changed',
             function progress(snapshot) {
                 const percentage = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
@@ -161,10 +210,10 @@ function uploadFiles(fileList, tipo) {
             },
             function error(err) {
                 console.error(`Erro no upload de ${file.name}:`, err);
+                alert(`Falha no upload de ${file.name}. Verifique o console (F12) para detalhes. O erro mais comum é de permissão.`);
             },
             function complete() {
                 console.log(`Upload de ${file.name} concluído com sucesso!`);
-                // Futuramente, aqui vamos atualizar a tabela da biblioteca
             }
         );
     });
@@ -205,7 +254,20 @@ function openEditChannelModal(docId) {
 // ===================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Navegação principal
+    // --- EVENTOS DE AUTENTICAÇÃO ---
+    const loginForm = document.getElementById('login-form');
+    loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const email = document.getElementById('login-email').value;
+        const password = document.getElementById('login-password').value;
+        fazerLogin(email, password);
+    });
+
+    const btnLogout = document.getElementById('btn-logout');
+    btnLogout.addEventListener('click', fazerLogout);
+
+
+    // --- EVENTOS DO DASHBOARD ---
     document.querySelectorAll('.nav-item').forEach(item => {
         item.addEventListener('click', (e) => {
             e.preventDefault();
@@ -213,11 +275,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Botões do Dashboard
     document.getElementById('btn-add-channel').addEventListener('click', openAddChannelModal);
     document.getElementById('btn-back-to-dashboard').addEventListener('click', () => navigateTo('dashboard'));
 
-    // Formulário de Canal
     document.getElementById('channel-form').addEventListener('submit', (e) => {
         e.preventDefault();
         const docId = document.getElementById('channel-id-input').value;
@@ -232,24 +292,17 @@ document.addEventListener('DOMContentLoaded', () => {
         closeModal('channel-modal');
     });
 
-    // --- NOVOS EVENTOS DE UPLOAD ---
+    // --- EVENTOS DE UPLOAD ---
     const btnUploadVideos = document.getElementById('btn-upload-videos');
     const videoFileInput = document.getElementById('video-file-input');
     const btnUploadThumbnails = document.getElementById('btn-upload-thumbnails');
     const thumbnailFileInput = document.getElementById('thumbnail-file-input');
 
-    // Aciona o input de vídeo quando o botão for clicado
     btnUploadVideos.addEventListener('click', () => videoFileInput.click());
-    // Chama a função de upload quando arquivos de vídeo forem selecionados
     videoFileInput.addEventListener('change', (e) => uploadFiles(e.target.files, 'video'));
 
-    // Aciona o input de thumbnail quando o botão for clicado
     btnUploadThumbnails.addEventListener('click', () => thumbnailFileInput.click());
-    // Chama a função de upload quando arquivos de thumbnail forem selecionados
     thumbnailFileInput.addEventListener('change', (e) => uploadFiles(e.target.files, 'thumbnail'));
 
-
-    // Inicialização
-    navigateTo('dashboard');
-    renderizarDashboard();
+    // A inicialização agora é controlada pelo onAuthStateChanged
 });
