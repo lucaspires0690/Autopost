@@ -10,7 +10,33 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="container">
+
+    <!-- PÁGINA DE LOGIN -->
+    <div id="login-page" class="page active">
+        <div class="login-container">
+            <div class="login-box">
+                <div class="sidebar-header">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="logo-icon"><path d="M12.0002 2.00002L4.00018 6.00002L12.0002 10L20.0002 6.00002L12.0002 2.00002Z" fill="#3b82f6"></path><path d="M4 6V18L12 22V10L4 6Z" fill="#2563eb"></path><path d="M20 6V18L12 22V10L20 6Z" fill="#60a5fa"></path></svg>
+                    <h1>Autopost</h1>
+                </div>
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="login-email">E-mail</label>
+                        <input type="email" id="login-email" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-password">Senha</label>
+                        <input type="password" id="login-password" required>
+                    </div>
+                    <p id="login-error-message" class="error-message"></p>
+                    <button type="submit" class="btn btn-primary btn-full-width">Entrar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTEÚDO PRINCIPAL DA APLICAÇÃO (Escondido por padrão ) -->
+    <div class="container" style="display: none;">
         <aside class="sidebar">
             <div class="sidebar-header">
                 <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="logo-icon"><path d="M12.0002 2.00002L4.00018 6.00002L12.0002 10L20.0002 6.00002L12.0002 2.00002Z" fill="#3b82f6"></path><path d="M4 6V18L12 22V10L4 6Z" fill="#2563eb"></path><path d="M20 6V18L12 22V10L20 6Z" fill="#60a5fa"></path></svg>
@@ -26,6 +52,12 @@
                     <span>Configurações</span>
                 </a>
             </nav>
+            <div class="sidebar-footer">
+                 <button id="btn-logout" class="nav-item">
+                    <i data-feather="log-out"></i>
+                    <span>Sair</span>
+                </button>
+            </div>
         </aside>
 
         <main class="main-content">
@@ -114,49 +146,7 @@
                                 </table>
                             </div>
                         </div>
-                        <!-- Subpágina de Agendamento em Massa -->
-                        <div id="agendamento-massa-subpage" class="channel-page">
-                            <h3>Agendamento em Massa</h3>
-                            <div class="upload-section">
-                                <p>Faça o upload de uma planilha (.csv ) para agendar múltiplos vídeos de uma vez.</p>
-                                <div class="upload-buttons">
-                                    <button id="btn-download-template" class="btn btn-secondary">
-                                        <i data-feather="download"></i>
-                                        Exportar para Planilha
-                                    </button>
-                                    <button id="btn-upload-csv" class="btn btn-success">
-                                        <i data-feather="upload"></i>
-                                        Upload de Planilha
-                                    </button>
-                                    <input type="file" id="csv-file-input" accept=".csv" style="display: none;">
-                                </div>
-                            </div>
-                            <div id="preview-section" style="display: none;">
-                                <h4>Pré-visualização do Agendamento</h4>
-                                <div class="table-container">
-                                    <table id="preview-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Vídeo</th>
-                                                <th>Título</th>
-                                                <th>Data</th>
-                                                <th>Hora</th>
-                                                <th>Status</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <!-- Linhas da pré-visualização -->
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <button id="btn-confirm-schedule" class="btn btn-primary" disabled>Confirmar e Agendar</button>
-                            </div>
-                        </div>
-                         <!-- Subpágina de Estatísticas -->
-                         <div id="estatisticas-subpage" class="channel-page">
-                            <h3>Estatísticas do Canal</h3>
-                            <p>Em breve...</p>
-                        </div>
+                        <!-- Outras subpáginas aqui... -->
                     </div>
                 </div>
             </div>
@@ -174,7 +164,7 @@
     <!-- Modal de Adicionar/Editar Canal -->
     <div id="channel-modal" class="modal">
         <div class="modal-content">
-            <span class="close-button" onclick="closeModal('channel-modal')">&times;</span>
+            <span class="close-button" onclick="closeModal('channel-modal' )">&times;</span>
             <h3 id="modal-title">Adicionar Novo Canal</h3>
             <form id="channel-form">
                 <input type="hidden" id="channel-id-input">
@@ -193,6 +183,7 @@
 
     <!-- Scripts do Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-storage-compat.js"></script>
     

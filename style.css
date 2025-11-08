@@ -288,6 +288,8 @@ tbody tr:hover {
 }
 
 input[type="text"],
+input[type="email"],
+input[type="password"],
 input[type="datetime-local"],
 select,
 textarea {
@@ -394,4 +396,60 @@ textarea {
 .subpage-header h3 {
     font-size: 1.5rem;
     font-weight: 600;
+}
+
+/* Estilos da Página de Login */
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    min-height: 100vh;
+    background-color: var(--cor-fundo);
+}
+
+.login-box {
+    width: 100%;
+    max-width: 400px;
+    padding: 2.5rem;
+    background-color: var(--cor-sidebar);
+    border-radius: 8px;
+    border: 1px solid var(--cor-borda);
+}
+
+.login-box .sidebar-header {
+    justify-content: center;
+    margin-bottom: 2rem;
+}
+
+.btn-full-width {
+    width: 100%;
+    padding: 0.8rem;
+    font-size: 1rem;
+    margin-top: 1rem;
+}
+
+.error-message {
+    color: var(--cor-vermelho);
+    font-size: 0.9rem;
+    text-align: center;
+    margin-top: 1rem;
+    min-height: 1.2rem;
+}
+
+/* Footer da Sidebar */
+.sidebar-footer {
+    margin-top: auto; /* Empurra o footer para o final */
+}
+
+#btn-logout {
+    width: 100%;
+    background: none;
+    border: none;
+    color: var(--cor-secundaria);
+}
+
+#btn-logout:hover {
+    background-color: var(--cor-borda);
+    color: var(--cor-vermelho);
 }
