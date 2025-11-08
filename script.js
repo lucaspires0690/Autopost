@@ -13,6 +13,7 @@ let dadosSimulados = {
         { id: 2, nome: "tutorial_novo_feature.mp4", duracao: "05:12", status: "Agendado", titulo: "Como usar a Nova Feature", descricao: "Neste tutorial completo, mostramos o passo a passo para ativar e usar a nova feature do nosso sistema.", tags: "tutorial, feature, guia" },
         { id: 3, nome: "video_antigo_01.mp4", duracao: "15:40", status: "Postado", titulo: "Review do Produto X", descricao: "Análise completa e sincera do produto X. Vale a pena comprar em 2025?", tags: "review, produto x, unboxing" },
         { id: 4, nome: "video_para_agendar_02.mp4", duracao: "08:15", status: "Na Biblioteca", titulo: "Título Padrão 2", descricao: "Descrição padrão 2.", tags: "tag2" },
+        { id: 5, nome: "video_para_agendar_03.mp4", duracao: "12:30", status: "Na Biblioteca", titulo: "Título Padrão 3", descricao: "Descrição padrão 3.", tags: "tag3" },
     ],
     agendamentosHoje: 1,
     falhas: 0,
@@ -176,19 +177,29 @@ function exportarPlanilhaParaAgendar() {
         return;
     }
 
+    const canalPrincipal = dadosSimulados.canais.find(c => c.status === 'Ativo');
+    if (!canalPrincipal) {
+        alert("Nenhum canal ativo encontrado para a simulação de agendamento.");
+        return;
+    }
+
     const separador = ';';
-    const cabecalho = ["nome_do_arquivo", "titulo_do_video", "descricao", "tags", "nome_do_canal", "data_hora_postagem (YYYY-MM-DD HH:MM)"].join(separador);
+    const cabecalho = ["nome_do_arquivo", "titulo_do_video", "descricao", "tags", "nome_do_canal", "data_postagem (YYYY-MM-DD)", "hora_postagem (HH:MM)"].join(separador);
     
+    let dataAtual = new Date();
     const linhas = videosParaAgendar.map(video => {
-        // Coloca aspas na descrição para proteger vírgulas e ponto e vírgulas
+        dataAtual.setDate(dataAtual.getDate() + 1); // Incrementa um dia para cada vídeo
+        const dataFormatada = dataAtual.toISOString().split('T')[0];
         const descricaoProtegida = `"${video.descricao.replace(/"/g, '""')}"`;
+        
         return [
             video.nome,
             video.titulo,
             descricaoProtegida,
             video.tags,
-            "", // Deixa o nome do canal em branco para o usuário preencher
-            ""  // Deixa a data em branco para o usuário preencher
+            canalPrincipal.nome, // Pré-preenche com o primeiro canal ativo
+            dataFormatada,      // Pré-preenche com a data consecutiva
+            canalPrincipal.horario // Pré-preenche com o horário padrão do canal
         ].join(separador);
     });
 
@@ -211,7 +222,9 @@ function processarResultadosPlanilha(results) {
     results.data.forEach(linha => {
         const nomeArquivo = linha.nome_do_arquivo;
         const nomeCanal = linha.nome_do_canal;
-        const dataHora = linha["data_hora_postagem (YYYY-MM-DD HH:MM)"];
+        const data = linha["data_postagem (YYYY-MM-DD)"];
+        const hora = linha["hora_postagem (HH:MM)"];
+        const dataHora = `${data} ${hora}`;
         
         const video = dadosSimulados.biblioteca.find(v => v.nome === nomeArquivo);
         const canal = dadosSimulados.canais.find(c => c.nome === nomeCanal && c.status === 'Ativo');
@@ -220,7 +233,7 @@ function processarResultadosPlanilha(results) {
         if (!video) erro = 'Vídeo não encontrado na biblioteca.';
         else if (video.status !== 'Na Biblioteca') erro = 'Vídeo já agendado ou postado.';
         else if (!canal) erro = 'Canal não encontrado ou inativo.';
-        else if (!dataHora || isNaN(new Date(dataHora).getTime())) erro = 'Data ou hora inválida.';
+        else if (!data || !hora || isNaN(new Date(dataHora).getTime())) erro = 'Data ou hora inválida.';
 
         const linhaProcessada = { ...linha, erro: erro };
         dadosSimulados.linhasPlanilha.push(linhaProcessada);
@@ -284,7 +297,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (canal) { canal.nome = nome; canal.youtubeId = youtubeId; }
         } else {
             const novoId = dadosSimulados.canais.length > 0 ? Math.max(...dadosSimulados.canais.map(c => c.id)) + 1 : 1;
-            dadosSimulados.canais.push({ id: novoId, nome, youtubeId, horario: "N/A", status: "Ativo" });
+            dadosSimulados.canais.push({ id: novoId, nome, youtubeId, horario: "09:00", status: "Ativo" }); // Adicionado horário padrão
         }
         renderizarDashboard();
         closeModal('channel-modal');
