@@ -9,9 +9,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 
-    <!-- CORREÇÃO: Movendo nosso script para o <head> com 'defer' -->
-    <!-- Isso garante que as funções gapiLoaded e gisLoaded existam quando forem chamadas. -->
-    <script src="script.js" defer></script>
+    <!-- CORREÇÃO FINAL: Nosso script primeiro, sem 'defer' ou 'async' -->
+    <!-- Isso garante que as funções existem ANTES de serem chamadas. -->
+    <script src="script.js"></script>
 
     <!-- Scripts do Google que chamarão as funções no nosso script.js -->
     <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded( )"></script>
@@ -235,7 +235,5 @@
     <script src="https://unpkg.com/papaparse@5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/feather-icons"></script>
     
-    <!-- Nosso script principal foi movido para o <head> -->
-
 </body>
 </html>
