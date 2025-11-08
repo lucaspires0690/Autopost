@@ -164,7 +164,7 @@ function gerenciarCanal(docId) {
     if (!canalAtual) return;
     document.getElementById('channel-management-title').textContent = `Gerenciamento: ${canalAtual.nome}`;
     navigateTo('channel-management');
-    switchSubpage('biblioteca'); // Define a subpágina inicial
+    switchSubpage('biblioteca');
     renderizarBiblioteca(canalAtual.docId);
 }
 
@@ -257,6 +257,88 @@ function uploadFiles(files, path) {
             }
         );
     });
+}
+
+// ===================================================================
+// LÓGICA DE AGENDAMENTO EM MASSA (CSV)
+// ===================================================================
+
+function logCsvStatus(message, type = 'info') {
+    const statusDiv = document.getElementById('csv-status');
+    const p = document.createElement('p');
+    p.textContent = message;
+    if (type === 'success') p.classList.add('log-success');
+    if (type === 'error') p.classList.add('log-error');
+    statusDiv.appendChild(p);
+    statusDiv.scrollTop = statusDiv.scrollHeight;
+}
+
+async function processarCSV(file) {
+    const statusDiv = document.getElementById('csv-status');
+    statusDiv.innerHTML = '';
+    logCsvStatus(`Iniciando processamento do arquivo: ${file.name}`);
+
+    Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: async (results) => {
+            logCsvStatus(`Arquivo lido. ${results.data.length} agendamentos encontrados.`);
+            
+            const agendamentosRef = db.collection('agendamentos');
+            const batch = db.batch();
+
+            for (const agendamento of results.data) {
+                if (!agendamento.nome_video || !agendamento.data_publicacao || !agendamento.hora_publicacao) {
+                    logCsvStatus(`ERRO: Linha inválida. Faltam dados obrigatórios. ${JSON.stringify(agendamento)}`, 'error');
+                    continue;
+                }
+
+                const dataHoraPublicacao = new Date(`${agendamento.data_publicacao}T${agendamento.hora_publicacao}:00`);
+
+                const novoAgendamento = {
+                    canalId: canalAtual.docId,
+                    nomeVideo: agendamento.nome_video,
+                    nomeThumbnail: agendamento.nome_thumbnail || '',
+                    titulo: agendamento.titulo || '',
+                    descricao: agendamento.descricao || '',
+                    tags: agendamento.tags || '',
+                    dataHoraPublicacao: firebase.firestore.Timestamp.fromDate(dataHoraPublicacao),
+                    status: 'Agendado',
+                    dataCriacao: firebase.firestore.FieldValue.serverTimestamp()
+                };
+
+                const docRef = agendamentosRef.doc();
+                batch.set(docRef, novoAgendamento);
+                logCsvStatus(`Agendamento para "${agendamento.titulo}" preparado.`);
+            }
+
+            try {
+                await batch.commit();
+                logCsvStatus(`SUCESSO: ${results.data.length} agendamentos foram salvos no banco de dados!`, 'success');
+            } catch (error) {
+                console.error("Erro ao salvar agendamentos em lote: ", error);
+                logCsvStatus(`ERRO FATAL: Não foi possível salvar os agendamentos no banco de dados.`, 'error');
+            }
+        },
+        error: (error) => {
+            console.error("Erro ao parsear CSV:", error);
+            logCsvStatus(`ERRO: Não foi possível ler o arquivo CSV. Verifique o formato.`, 'error');
+        }
+    });
+}
+
+// ***** NOVA FUNÇÃO PARA BAIXAR O MODELO CSV *****
+function baixarModeloCSV() {
+    const header = "nome_video,nome_thumbnail,titulo,descricao,tags,data_publicacao,hora_publicacao\n";
+    const blob = new Blob([header], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", "modelo_agendamento.csv");
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }
 
 // ===================================================================
@@ -377,11 +459,21 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // ***** NOVO EVENT LISTENER PARA O BOTÃO DE IMPORTAR CSV *****
+    // Botão de importar CSV
     const btnImportCsv = document.getElementById('btn-import-csv');
     const csvFileInput = document.getElementById('csv-file-input');
     if(btnImportCsv) {
         btnImportCsv.addEventListener('click', () => csvFileInput.click());
-        // A lógica de leitura do arquivo será adicionada aqui no próximo passo
+        csvFileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                processarCSV(e.target.files[0]);
+            }
+        });
+    }
+
+    // ***** NOVO EVENT LISTENER PARA O BOTÃO DE BAIXAR MODELO *****
+    const btnDownloadTemplate = document.getElementById('btn-download-csv-template');
+    if (btnDownloadTemplate) {
+        btnDownloadTemplate.addEventListener('click', baixarModeloCSV);
     }
 });

@@ -100,10 +100,12 @@ textarea { resize: vertical; }
 .tab-content { display: none; }
 .tab-content.active { display: block; }
 
-/* ***** NOVOS ESTILOS PARA AGENDAMENTO EM MASSA ***** */
+/* Card de Agendamento em Massa */
 .card { background-color: var(--cor-card); padding: 1.5rem 2rem; border-radius: 8px; border: 1px solid var(--cor-borda); }
 .card h4 { font-size: 1.25rem; margin-bottom: 0.5rem; }
 .card .card-subtitle { color: var(--cor-secundaria); margin-bottom: 1.5rem; }
+/* ***** NOVO ESTILO PARA OS BOTÕES DO CARD ***** */
+.card-actions { display: flex; gap: 1rem; }
 .status-log { margin-top: 1.5rem; background-color: var(--cor-fundo); border-radius: 6px; padding: 1rem; height: 200px; overflow-y: auto; font-family: 'Courier New', Courier, monospace; font-size: 0.9rem; }
 .status-log p { margin-bottom: 0.5rem; }
 .status-log .log-success { color: var(--cor-verde); }
