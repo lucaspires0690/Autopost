@@ -172,19 +172,21 @@ body {
 .btn-icon:hover {
     background-color: var(--cor-fundo);
 }
-.btn-icon i {
+
+/* CORREÇÃO FINAL APLICADA AQUI: i -> svg */
+.btn-icon svg {
     color: var(--cor-secundaria);
     transition: color 0.2s;
 }
 
 /* Cores dos Ícones de Ação */
-.btn-icon.edit-icon i, .btn-icon.metadata-icon i {
+.btn-icon.edit-icon svg, .btn-icon.metadata-icon svg {
     color: var(--cor-amarelo);
 }
-.btn-icon.remove-icon i {
+.btn-icon.remove-icon svg {
     color: var(--cor-vermelho);
 }
-.btn-icon.schedule-icon i {
+.btn-icon.schedule-icon svg {
     color: var(--cor-azul-primario);
 }
 
@@ -212,10 +214,10 @@ body {
     border-radius: 50%;
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items.center;
 }
 
-.stat-icon i {
+.stat-icon svg {
     color: white;
 }
 
