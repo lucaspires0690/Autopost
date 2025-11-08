@@ -203,9 +203,28 @@ function openMetadataModal(videoId) {
 // --- Funções de Agendamento em Massa ---
 
 function downloadModelo() {
-    const cabecalho = "nome_do_arquivo,titulo_do_video,descricao,tags,nome_do_canal,data_hora_postagem (YYYY-MM-DD HH:MM)";
-    const exemplo = "video_final_01.mp4,Meu Primeiro Vídeo,Esta é a descrição do meu primeiro vídeo.,tag1,tag2,Canal Principal,2025-12-25 10:00";
-    const conteudoCsv = cabecalho + "\n" + exemplo;
+    // Usando ponto e vírgula como separador para compatibilidade com Excel em português
+    const separador = ';';
+    const cabecalho = [
+        "nome_do_arquivo",
+        "titulo_do_video",
+        "descricao",
+        "tags",
+        "nome_do_canal",
+        "data_hora_postagem (YYYY-MM-DD HH:MM)"
+    ].join(separador);
+
+    const exemplo = [
+        "video_final_01.mp4",
+        "Meu Primeiro Vídeo",
+        "\"Esta é a descrição do meu primeiro vídeo, com vírgulas e tudo mais.\"", // Aspas para proteger vírgulas na descrição
+        "tag1, tag2, tag3",
+        "Canal Principal",
+        "2025-12-25 10:00"
+    ].join(separador);
+
+    // Adicionando o BOM (\uFEFF) no início para forçar o Excel a usar UTF-8
+    const conteudoCsv = "\uFEFF" + cabecalho + "\n" + exemplo;
     
     const blob = new Blob([conteudoCsv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement("a");
@@ -216,7 +235,6 @@ function downloadModelo() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    alert("O download do modelo da planilha foi iniciado.");
 }
 
 // --- Event Listeners para Formulários ---
