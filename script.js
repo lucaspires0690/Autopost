@@ -22,6 +22,7 @@ const storage = firebase.storage();
 // ===================================================================
 
 let canaisCache = [];
+let agendamentosCache = []; // Cache para os agendamentos
 let canalAtual = null;
 
 // ===================================================================
@@ -147,6 +148,47 @@ async function renderizarBiblioteca(canalId) {
     }
 }
 
+async function renderizarAgendamentos(canalId) {
+    const schedulesTableBody = document.getElementById('schedules-table').querySelector('tbody');
+    schedulesTableBody.innerHTML = '<tr><td colspan="4">Carregando agendamentos...</td></tr>';
+    try {
+        const snapshot = await db.collection('agendamentos')
+            .where('canalId', '==', canalId)
+            .orderBy('dataHoraPublicacao', 'asc')
+            .get();
+        
+        agendamentosCache = snapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
+
+        if (agendamentosCache.length === 0) {
+            schedulesTableBody.innerHTML = '<tr><td colspan="4">Nenhum agendamento encontrado.</td></tr>';
+            return;
+        }
+
+        schedulesTableBody.innerHTML = '';
+        agendamentosCache.forEach(agendamento => {
+            const tr = document.createElement('tr');
+            const dataHora = agendamento.dataHoraPublicacao.toDate();
+            const dataFormatada = dataHora.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+            const horaFormatada = dataHora.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+            tr.innerHTML = `
+                <td>${agendamento.titulo}</td>
+                <td>${dataFormatada} às ${horaFormatada}</td>
+                <td><span class="status agendado">${agendamento.status}</span></td>
+                <td class="actions">
+                    <button class="btn-icon-table edit-icon" title="Editar Agendamento" onclick="openEditScheduleModal('${agendamento.docId}')"><i data-feather="edit"></i></button>
+                    <button class="btn-icon-table remove-icon" title="Remover Agendamento" onclick="removerAgendamento('${agendamento.docId}')"><i data-feather="trash-2"></i></button>
+                </td>
+            `;
+            schedulesTableBody.appendChild(tr);
+        });
+        feather.replace();
+    } catch (error) {
+        console.error("Erro ao buscar agendamentos: ", error);
+        schedulesTableBody.innerHTML = '<tr><td colspan="4">Erro ao carregar agendamentos.</td></tr>';
+    }
+}
+
 // ===================================================================
 // LÓGICA DE NAVEGAÇÃO E GERENCIAMENTO DE PÁGINAS
 // ===================================================================
@@ -165,7 +207,6 @@ function gerenciarCanal(docId) {
     document.getElementById('channel-management-title').textContent = `Gerenciamento: ${canalAtual.nome}`;
     navigateTo('channel-management');
     switchSubpage('biblioteca');
-    renderizarBiblioteca(canalAtual.docId);
 }
 
 function switchTab(tabName) {
@@ -185,7 +226,10 @@ function switchSubpage(subpageId) {
         item.classList.toggle('active', item.dataset.subpage === subpageId);
     });
     if (subpageId === 'biblioteca') {
+        renderizarBiblioteca(canalAtual.docId);
         switchTab('videos');
+    } else if (subpageId === 'agendamento') {
+        renderizarAgendamentos(canalAtual.docId);
     }
 }
 
@@ -260,7 +304,7 @@ function uploadFiles(files, path) {
 }
 
 // ===================================================================
-// LÓGICA DE AGENDAMENTO EM MASSA (CSV)
+// LÓGICA DE AGENDAMENTO EM MASSA (CSV e CRUD)
 // ===================================================================
 
 function logCsvStatus(message, type = 'info') {
@@ -315,6 +359,7 @@ async function processarCSV(file) {
             try {
                 await batch.commit();
                 logCsvStatus(`SUCESSO: ${results.data.length} agendamentos foram salvos no banco de dados!`, 'success');
+                renderizarAgendamentos(canalAtual.docId);
             } catch (error) {
                 console.error("Erro ao salvar agendamentos em lote: ", error);
                 logCsvStatus(`ERRO FATAL: Não foi possível salvar os agendamentos no banco de dados.`, 'error');
@@ -327,7 +372,6 @@ async function processarCSV(file) {
     });
 }
 
-// ***** NOVA FUNÇÃO PARA BAIXAR O MODELO CSV *****
 function baixarModeloCSV() {
     const header = "nome_video,nome_thumbnail,titulo,descricao,tags,data_publicacao,hora_publicacao\n";
     const blob = new Blob([header], { type: 'text/csv;charset=utf-8;' });
@@ -339,6 +383,29 @@ function baixarModeloCSV() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+}
+
+async function editarAgendamento(docId, dados) {
+    try {
+        await db.collection('agendamentos').doc(docId).update(dados);
+        renderizarAgendamentos(canalAtual.docId);
+        closeModal('schedule-modal');
+    } catch (error) {
+        console.error("Erro ao editar agendamento: ", error);
+        alert("Não foi possível salvar as alterações.");
+    }
+}
+
+async function removerAgendamento(docId) {
+    if (confirm('Tem certeza que deseja remover este agendamento?')) {
+        try {
+            await db.collection('agendamentos').doc(docId).delete();
+            renderizarAgendamentos(canalAtual.docId);
+        } catch (error) {
+            console.error("Erro ao remover agendamento: ", error);
+            alert("Não foi possível remover o agendamento.");
+        }
+    }
 }
 
 // ===================================================================
@@ -363,6 +430,26 @@ function openEditChannelModal(docId) {
     document.getElementById('channel-name').value = canal.nome;
     document.getElementById('channel-youtube-id').value = canal.youtubeId;
     openModal('channel-modal');
+}
+
+function openEditScheduleModal(docId) {
+    const agendamento = agendamentosCache.find(a => a.docId === docId);
+    if (!agendamento) return;
+
+    document.getElementById('schedule-id-input').value = docId;
+    document.getElementById('schedule-title').value = agendamento.titulo;
+    document.getElementById('schedule-description').value = agendamento.descricao;
+    document.getElementById('schedule-tags').value = agendamento.tags;
+
+    const data = agendamento.dataHoraPublicacao.toDate();
+    const ano = data.getFullYear();
+    const mes = String(data.getMonth() + 1).padStart(2, '0');
+    const dia = String(data.getDate()).padStart(2, '0');
+    const hora = String(data.getHours()).padStart(2, '0');
+    const minuto = String(data.getMinutes()).padStart(2, '0');
+    document.getElementById('schedule-datetime').value = `${ano}-${mes}-${dia}T${hora}:${minuto}`;
+    
+    openModal('schedule-modal');
 }
 
 // ===================================================================
@@ -414,6 +501,22 @@ document.addEventListener('DOMContentLoaded', () => {
             } else {
                 adicionarCanal(nome, youtubeId);
             }
+        });
+    }
+
+    // Formulário do modal de agendamento (Editar)
+    const scheduleForm = document.getElementById('schedule-form');
+    if (scheduleForm) {
+        scheduleForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const docId = document.getElementById('schedule-id-input').value;
+            const dados = {
+                titulo: document.getElementById('schedule-title').value,
+                descricao: document.getElementById('schedule-description').value,
+                tags: document.getElementById('schedule-tags').value,
+                dataHoraPublicacao: firebase.firestore.Timestamp.fromDate(new Date(document.getElementById('schedule-datetime').value))
+            };
+            editarAgendamento(docId, dados);
         });
     }
 
@@ -471,7 +574,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // ***** NOVO EVENT LISTENER PARA O BOTÃO DE BAIXAR MODELO *****
+    // Botão de baixar modelo CSV
     const btnDownloadTemplate = document.getElementById('btn-download-csv-template');
     if (btnDownloadTemplate) {
         btnDownloadTemplate.addEventListener('click', baixarModeloCSV);

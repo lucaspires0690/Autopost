@@ -156,7 +156,6 @@
                             <div class="card">
                                 <h4>Importar Planilha de Agendamento</h4>
                                 <p class="card-subtitle">Faça o upload de um arquivo .CSV com os dados dos vídeos a serem publicados. Baixe o modelo para garantir o formato correto.</p>
-                                <!-- ***** BOTÕES ATUALIZADOS ***** -->
                                 <div class="card-actions">
                                     <button id="btn-download-csv-template" class="btn btn-secondary">
                                         <i data-feather="download"></i>
@@ -171,6 +170,26 @@
                                 <div id="csv-status" class="status-log">
                                     <p>Aguardando importação...</p>
                                 </div>
+                            </div>
+                            
+                            <!-- ***** NOVA TABELA DE GERENCIAMENTO DE AGENDAMENTOS ***** -->
+                            <div class="subpage-header" style="margin-top: 2rem;">
+                                <h3>Fila de Agendamentos</h3>
+                            </div>
+                            <div class="table-container">
+                                <table id="schedules-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Título do Vídeo</th>
+                                            <th>Data de Publicação</th>
+                                            <th>Status</th>
+                                            <th>Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- As linhas serão inseridas aqui pelo JavaScript -->
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                          <!-- Subpágina de Estatísticas -->
@@ -206,6 +225,34 @@
                     <input type="text" id="channel-youtube-id" required>
                 </div>
                 <button type="submit" class="btn btn-primary">Salvar</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- ***** NOVO MODAL DE EDIÇÃO DE AGENDAMENTO ***** -->
+    <div id="schedule-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-button" onclick="closeModal('schedule-modal')">&times;</span>
+            <h3 id="schedule-modal-title">Editar Agendamento</h3>
+            <form id="schedule-form">
+                <input type="hidden" id="schedule-id-input">
+                <div class="form-group">
+                    <label for="schedule-title">Título do Vídeo</label>
+                    <input type="text" id="schedule-title" required>
+                </div>
+                <div class="form-group">
+                    <label for="schedule-description">Descrição</label>
+                    <textarea id="schedule-description" rows="4"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="schedule-tags">Tags (separadas por vírgula)</label>
+                    <input type="text" id="schedule-tags">
+                </div>
+                <div class="form-group">
+                    <label for="schedule-datetime">Data e Hora da Publicação</label>
+                    <input type="datetime-local" id="schedule-datetime" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Salvar Alterações</button>
             </form>
         </div>
     </div>
