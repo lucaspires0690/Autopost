@@ -37,7 +37,7 @@
         </div>
     </div>
 
-    <!-- CONTAINER PRINCIPAL DA APLICAÇÃO (escondido por padrão ) -->
+    <!-- CONTAINER PRINCIPAL DA APLICAÇÃO -->
     <div class="container" style="display: none;">
         <aside class="sidebar">
             <div>
@@ -85,9 +85,7 @@
                                 <th>Ações</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <!-- Canais serão inseridos aqui -->
-                        </tbody>
+                        <tbody></tbody>
                     </table>
                 </div>
             </div>
@@ -122,32 +120,49 @@
                             <div class="subpage-header">
                                 <h3>Biblioteca de Mídia</h3>
                                 <div class="upload-buttons">
-                                    <button id="btn-upload-videos" class="btn btn-success">
-                                        <i data-feather="upload-cloud"></i>
-                                        Upload de Vídeos
-                                    </button>
-                                    <button id="btn-upload-thumbnails" class="btn btn-warning">
-                                        <i data-feather="image"></i>
-                                        Upload de Thumbnails
-                                    </button>
+                                    <button id="btn-upload-videos" class="btn btn-success"><i data-feather="upload-cloud"></i> Upload de Vídeos</button>
+                                    <button id="btn-upload-thumbnails" class="btn btn-warning"><i data-feather="image"></i> Upload de Thumbnails</button>
                                     <input type="file" id="video-file-input" multiple hidden accept="video/*">
                                     <input type="file" id="thumbnail-file-input" multiple hidden accept="image/*">
                                 </div>
                             </div>
-                            <div class="table-container">
-                                <table id="videos-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Nome do Arquivo</th>
-                                            <th>Tipo</th>
-                                            <th>Status</th>
-                                            <th>Ações</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <!-- Vídeos serão inseridos aqui -->
-                                    </tbody>
-                                </table>
+                            
+                            <!-- ***** NOVA ESTRUTURA DE ABAS ***** -->
+                            <div class="tabs-container">
+                                <button class="tab-button active" data-tab="videos">Vídeos</button>
+                                <button class="tab-button" data-tab="thumbnails">Thumbnails</button>
+                            </div>
+
+                            <!-- Conteúdo da Aba de Vídeos -->
+                            <div id="videos-tab-content" class="tab-content active">
+                                <div class="table-container">
+                                    <table id="videos-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Nome do Arquivo</th>
+                                                <th>Status</th>
+                                                <th>Ações</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Conteúdo da Aba de Thumbnails -->
+                            <div id="thumbnails-tab-content" class="tab-content">
+                                <div class="table-container">
+                                    <table id="thumbnails-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Nome do Arquivo</th>
+                                                <th>Status</th>
+                                                <th>Ações</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -165,7 +180,7 @@
     <!-- MODAL DE CANAL -->
     <div id="channel-modal" class="modal">
         <div class="modal-content">
-            <span class="close-button" onclick="closeModal('channel-modal')">&times;</span>
+            <span class="close-button" onclick="closeModal('channel-modal' )">&times;</span>
             <h3 id="modal-title">Adicionar Novo Canal</h3>
             <form id="channel-form">
                 <input type="hidden" id="channel-id-input">

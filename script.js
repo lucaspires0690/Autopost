@@ -12,7 +12,6 @@ const firebaseConfig = {
   measurementId: "G-X4SBER5XVP"
 };
 
-// Inicializa os serviços do Firebase
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
@@ -32,7 +31,6 @@ let canalAtual = null;
 auth.onAuthStateChanged(user => {
     const loginPage = document.getElementById('login-page');
     const mainContainer = document.querySelector('.container');
-
     if (user) {
         loginPage.style.display = 'none';
         mainContainer.style.display = 'flex';
@@ -73,17 +71,14 @@ async function fazerLogout() {
 
 async function renderizarDashboard() {
     const channelsTableBody = document.getElementById('channels-table').querySelector('tbody');
-    channelsTableBody.innerHTML = '<tr><td colspan="5">Carregando canais da nuvem...</td></tr>';
-
+    channelsTableBody.innerHTML = '<tr><td colspan="5">Carregando canais...</td></tr>';
     try {
         const snapshot = await db.collection('canais').orderBy('id').get();
         canaisCache = snapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
-        
         if (canaisCache.length === 0) {
-            channelsTableBody.innerHTML = '<tr><td colspan="5">Nenhum canal encontrado. Adicione um novo canal.</td></tr>';
+            channelsTableBody.innerHTML = '<tr><td colspan="5">Nenhum canal encontrado.</td></tr>';
             return;
         }
-
         channelsTableBody.innerHTML = '';
         canaisCache.forEach(canal => {
             const tr = document.createElement('tr');
@@ -101,68 +96,71 @@ async function renderizarDashboard() {
             `;
             channelsTableBody.appendChild(tr);
         });
-
         feather.replace();
     } catch (error) {
         console.error("Erro ao buscar canais: ", error);
-        channelsTableBody.innerHTML = '<tr><td colspan="5">Erro ao carregar canais. Verifique o console (F12).</td></tr>';
+        channelsTableBody.innerHTML = '<tr><td colspan="5">Erro ao carregar canais.</td></tr>';
     }
 }
 
-// ***** FUNÇÃO CORRIGIDA E SIMPLIFICADA *****
+// ***** FUNÇÃO DE RENDERIZAÇÃO DA BIBLIOTECA MODIFICADA PARA ABAS *****
 async function renderizarBiblioteca(canalId) {
     const videosTableBody = document.getElementById('videos-table').querySelector('tbody');
-    videosTableBody.innerHTML = '<tr><td colspan="4">Carregando mídia...</td></tr>';
+    const thumbnailsTableBody = document.getElementById('thumbnails-table').querySelector('tbody');
+    videosTableBody.innerHTML = '<tr><td colspan="3">Carregando vídeos...</td></tr>';
+    thumbnailsTableBody.innerHTML = '<tr><td colspan="3">Carregando thumbnails...</td></tr>';
 
     try {
-        // Referências diretas para as pastas de vídeos e thumbnails
         const videosRef = storage.ref(`canais/${canalId}/videos`);
         const thumbnailsRef = storage.ref(`canais/${canalId}/thumbnails`);
 
-        // Pede a lista de arquivos de cada pasta em paralelo
         const [videosRes, thumbnailsRes] = await Promise.all([
             videosRef.listAll(),
             thumbnailsRef.listAll()
         ]);
 
-        const allFiles = [];
-
-        // Adiciona os vídeos na lista
-        videosRes.items.forEach(itemRef => {
-            allFiles.push({ nome: itemRef.name, tipo: 'Vídeo' });
-        });
-
-        // Adiciona as thumbnails na lista
-        thumbnailsRes.items.forEach(itemRef => {
-            allFiles.push({ nome: itemRef.name, tipo: 'Thumbnail' });
-        });
-
-        if (allFiles.length === 0) {
-            videosTableBody.innerHTML = '<tr><td colspan="4">Nenhuma mídia encontrada. Faça o upload de vídeos e thumbnails.</td></tr>';
-            return;
+        // Renderiza a tabela de vídeos
+        if (videosRes.items.length === 0) {
+            videosTableBody.innerHTML = '<tr><td colspan="3">Nenhum vídeo encontrado.</td></tr>';
+        } else {
+            videosTableBody.innerHTML = '';
+            videosRes.items.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${item.name}</td>
+                    <td>Disponível</td>
+                    <td class="actions">
+                        <button class="btn-icon-table remove-icon" title="Remover"><i data-feather="trash-2"></i></button>
+                    </td>
+                `;
+                videosTableBody.appendChild(tr);
+            });
         }
 
-        videosTableBody.innerHTML = '';
-        allFiles.forEach(file => {
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${file.nome}</td>
-                <td>${file.tipo}</td>
-                <td>Disponível</td>
-                <td class="actions">
-                    <button class="btn-icon-table remove-icon" title="Remover"><i data-feather="trash-2"></i></button>
-                </td>
-            `;
-            videosTableBody.appendChild(tr);
-        });
+        // Renderiza a tabela de thumbnails
+        if (thumbnailsRes.items.length === 0) {
+            thumbnailsTableBody.innerHTML = '<tr><td colspan="3">Nenhuma thumbnail encontrada.</td></tr>';
+        } else {
+            thumbnailsTableBody.innerHTML = '';
+            thumbnailsRes.items.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td>${item.name}</td>
+                    <td>Disponível</td>
+                    <td class="actions">
+                        <button class="btn-icon-table remove-icon" title="Remover"><i data-feather="trash-2"></i></button>
+                    </td>
+                `;
+                thumbnailsTableBody.appendChild(tr);
+            });
+        }
         feather.replace();
-
     } catch (error) {
         console.error("Erro ao listar arquivos da biblioteca:", error);
-        videosTableBody.innerHTML = '<tr><td colspan="4">Erro ao carregar mídia. Verifique o console (F12).</td></tr>';
+        videosTableBody.innerHTML = '<tr><td colspan="3">Erro ao carregar vídeos.</td></tr>';
+        thumbnailsTableBody.innerHTML = '<tr><td colspan="3">Erro ao carregar thumbnails.</td></tr>';
     }
 }
-
 
 // ===================================================================
 // LÓGICA DE NAVEGAÇÃO E GERENCIAMENTO DE PÁGINAS
@@ -181,8 +179,17 @@ function gerenciarCanal(docId) {
     if (!canalAtual) return;
     document.getElementById('channel-management-title').textContent = `Gerenciamento: ${canalAtual.nome}`;
     navigateTo('channel-management');
-    
-    renderizarBiblioteca(canalAtual.docId); 
+    renderizarBiblioteca(canalAtual.docId);
+}
+
+// ***** NOVA FUNÇÃO PARA CONTROLAR AS ABAS *****
+function switchTab(tabName) {
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.classList.toggle('active', button.dataset.tab === tabName);
+    });
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.toggle('active', content.id === `${tabName}-tab-content`);
+    });
 }
 
 // ===================================================================
@@ -193,18 +200,12 @@ async function adicionarCanal(nome, youtubeId) {
     try {
         const ultimoCanalSnapshot = await db.collection('canais').orderBy('id', 'desc').limit(1).get();
         const novoId = ultimoCanalSnapshot.empty ? 1 : ultimoCanalSnapshot.docs[0].data().id + 1;
-
         await db.collection('canais').add({
-            id: novoId,
-            nome: nome,
-            youtubeId: youtubeId,
-            dataCriacao: new Date().toISOString().split('T')[0],
-            status: 'Ativo'
+            id: novoId, nome: nome, youtubeId: youtubeId,
+            dataCriacao: new Date().toISOString().split('T')[0], status: 'Ativo'
         });
         renderizarDashboard();
-    } catch (error) {
-        console.error("Erro ao adicionar canal: ", error);
-    }
+    } catch (error) { console.error("Erro ao adicionar canal: ", error); }
 }
 
 async function removerCanal(docId) {
@@ -212,22 +213,15 @@ async function removerCanal(docId) {
         try {
             await db.collection('canais').doc(docId).delete();
             renderizarDashboard();
-        } catch (error) {
-            console.error("Erro ao remover canal: ", error);
-        }
+        } catch (error) { console.error("Erro ao remover canal: ", error); }
     }
 }
 
 async function editarCanal(docId, nome, youtubeId) {
     try {
-        await db.collection('canais').doc(docId).update({
-            nome: nome,
-            youtubeId: youtubeId
-        });
+        await db.collection('canais').doc(docId).update({ nome: nome, youtubeId: youtubeId });
         renderizarDashboard();
-    } catch (error) {
-        console.error("Erro ao editar canal: ", error);
-    }
+    } catch (error) { console.error("Erro ao editar canal: ", error); }
 }
 
 // ===================================================================
@@ -235,54 +229,38 @@ async function editarCanal(docId, nome, youtubeId) {
 // ===================================================================
 
 function uploadFiles(fileList, tipo) {
-    if (!canalAtual) {
-        alert("Erro: Nenhum canal selecionado para o upload.");
+    if (!canalAtual || !auth.currentUser) {
+        alert("Erro: Canal não selecionado ou usuário não autenticado.");
         return;
     }
-    if (!auth.currentUser) {
-        alert("Erro: Você não está autenticado. Faça o login novamente.");
-        return;
-    }
-
     const pasta = tipo === 'video' ? 'videos' : 'thumbnails';
-    
     Array.from(fileList).forEach(file => {
         console.log(`Iniciando upload de ${file.name}...`);
-        
         const storagePath = `canais/${canalAtual.docId}/${pasta}/${file.name}`;
-        const storageRef = storage.ref(storagePath);
-
-        const task = storageRef.put(file);
-
+        const task = storage.ref(storagePath).put(file);
         task.on('state_changed',
-            function progress(snapshot) {
+            snapshot => {
                 const percentage = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                console.log(`Upload de ${file.name}: ${percentage.toFixed(2)}% concluído.`);
+                console.log(`Upload de ${file.name}: ${percentage.toFixed(2)}%`);
             },
-            function error(err) {
+            err => {
                 console.error(`Erro no upload de ${file.name}:`, err);
-                alert(`Falha no upload de ${file.name}. Verifique o console (F12) para detalhes. O erro mais comum é de permissão.`);
+                alert(`Falha no upload de ${file.name}. Verifique o console (F12).`);
             },
-            function complete() {
-                console.log(`Upload de ${file.name} concluído com sucesso!`);
+            () => {
+                console.log(`Upload de ${file.name} concluído!`);
                 renderizarBiblioteca(canalAtual.docId);
             }
         );
     });
 }
 
-
 // ===================================================================
 // FUNÇÕES DOS MODAIS (Pop-ups)
 // ===================================================================
 
-function closeModal(modalId) {
-    document.getElementById(modalId).style.display = 'none';
-}
-
-function openModal(modalId) {
-    document.getElementById(modalId).style.display = 'flex';
-}
+function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
+function openModal(modalId) { document.getElementById(modalId).style.display = 'flex'; }
 
 function openAddChannelModal() {
     document.getElementById('channel-form').reset();
@@ -294,61 +272,3 @@ function openAddChannelModal() {
 function openEditChannelModal(docId) {
     const canal = canaisCache.find(c => c.docId === docId);
     if (!canal) return;
-    document.getElementById('modal-title').textContent = 'Editar Canal';
-    document.getElementById('channel-id-input').value = canal.docId;
-    document.getElementById('channel-name').value = canal.nome;
-    document.getElementById('channel-youtube-id').value = canal.youtubeId;
-    openModal('channel-modal');
-}
-
-// ===================================================================
-// EVENT LISTENERS (OUVINTES DE EVENTOS)
-// ===================================================================
-
-document.addEventListener('DOMContentLoaded', () => {
-    const loginForm = document.getElementById('login-form');
-    loginForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const email = document.getElementById('login-email').value;
-        const password = document.getElementById('login-password').value;
-        fazerLogin(email, password);
-    });
-
-    const btnLogout = document.getElementById('btn-logout');
-    btnLogout.addEventListener('click', fazerLogout);
-
-    document.querySelectorAll('.nav-item').forEach(item => {
-        item.addEventListener('click', (e) => {
-            e.preventDefault();
-            navigateTo(item.dataset.page);
-        });
-    });
-
-    document.getElementById('btn-add-channel').addEventListener('click', openAddChannelModal);
-    document.getElementById('btn-back-to-dashboard').addEventListener('click', () => navigateTo('dashboard'));
-
-    document.getElementById('channel-form').addEventListener('submit', (e) => {
-        e.preventDefault();
-        const docId = document.getElementById('channel-id-input').value;
-        const nome = document.getElementById('channel-name').value;
-        const youtubeId = document.getElementById('channel-youtube-id').value;
-
-        if (docId) {
-            editarCanal(docId, nome, youtubeId);
-        } else {
-            adicionarCanal(nome, youtubeId);
-        }
-        closeModal('channel-modal');
-    });
-
-    const btnUploadVideos = document.getElementById('btn-upload-videos');
-    const videoFileInput = document.getElementById('video-file-input');
-    const btnUploadThumbnails = document.getElementById('btn-upload-thumbnails');
-    const thumbnailFileInput = document.getElementById('thumbnail-file-input');
-
-    btnUploadVideos.addEventListener('click', () => videoFileInput.click());
-    videoFileInput.addEventListener('change', (e) => uploadFiles(e.target.files, 'video'));
-
-    btnUploadThumbnails.addEventListener('click', () => thumbnailFileInput.click());
-    thumbnailFileInput.addEventListener('change', (e) => uploadFiles(e.target.files, 'thumbnail'));
-});
