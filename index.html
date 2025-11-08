@@ -102,21 +102,22 @@
 
                 <div class="channel-layout">
                     <aside class="channel-sidebar">
-                        <a href="#" class="channel-nav-item active">
+                        <a href="#" class="channel-nav-item" data-subpage="biblioteca">
                             <i data-feather="film"></i>
                             <span>Biblioteca</span>
                         </a>
-                        <a href="#" class="channel-nav-item">
+                        <a href="#" class="channel-nav-item" data-subpage="agendamento">
                             <i data-feather="calendar"></i>
                             <span>Agend. em Massa</span>
                         </a>
-                        <a href="#" class="channel-nav-item">
+                        <a href="#" class="channel-nav-item" data-subpage="estatisticas">
                             <i data-feather="bar-chart-2"></i>
                             <span>Estatísticas</span>
                         </a>
                     </aside>
                     <div class="channel-content">
-                        <div id="biblioteca-page" class="channel-page active">
+                        <!-- Subpágina da Biblioteca -->
+                        <div id="biblioteca-subpage" class="channel-page">
                             <div class="subpage-header">
                                 <h3>Biblioteca de Mídia</h3>
                                 <div class="upload-buttons">
@@ -126,44 +127,49 @@
                                     <input type="file" id="thumbnail-file-input" multiple hidden accept="image/*">
                                 </div>
                             </div>
-                            
-                            <!-- ***** NOVA ESTRUTURA DE ABAS ***** -->
                             <div class="tabs-container">
                                 <button class="tab-button active" data-tab="videos">Vídeos</button>
                                 <button class="tab-button" data-tab="thumbnails">Thumbnails</button>
                             </div>
-
-                            <!-- Conteúdo da Aba de Vídeos -->
                             <div id="videos-tab-content" class="tab-content active">
                                 <div class="table-container">
                                     <table id="videos-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Nome do Arquivo</th>
-                                                <th>Status</th>
-                                                <th>Ações</th>
-                                            </tr>
-                                        </thead>
+                                        <thead><tr><th>Nome do Arquivo</th><th>Status</th><th>Ações</th></tr></thead>
                                         <tbody></tbody>
                                     </table>
                                 </div>
                             </div>
-
-                            <!-- Conteúdo da Aba de Thumbnails -->
                             <div id="thumbnails-tab-content" class="tab-content">
                                 <div class="table-container">
                                     <table id="thumbnails-table">
-                                        <thead>
-                                            <tr>
-                                                <th>Nome do Arquivo</th>
-                                                <th>Status</th>
-                                                <th>Ações</th>
-                                            </tr>
-                                        </thead>
+                                        <thead><tr><th>Nome do Arquivo</th><th>Status</th><th>Ações</th></tr></thead>
                                         <tbody></tbody>
                                     </table>
                                 </div>
                             </div>
+                        </div>
+                        <!-- ***** NOVA SUBPÁGINA DE AGENDAMENTO EM MASSA ***** -->
+                        <div id="agendamento-subpage" class="channel-page">
+                             <div class="subpage-header">
+                                <h3>Agendamento em Massa</h3>
+                            </div>
+                            <div class="card">
+                                <h4>Importar Planilha de Agendamento</h4>
+                                <p class="card-subtitle">Faça o upload de um arquivo .CSV com os dados dos vídeos a serem publicados. Certifique-se de que a planilha siga o modelo correto.</p>
+                                <button id="btn-import-csv" class="btn btn-primary">
+                                    <i data-feather="upload"></i>
+                                    Importar Planilha (CSV )
+                                </button>
+                                <input type="file" id="csv-file-input" hidden accept=".csv">
+                                <div id="csv-status" class="status-log">
+                                    <p>Aguardando importação...</p>
+                                </div>
+                            </div>
+                        </div>
+                         <!-- Subpágina de Estatísticas -->
+                        <div id="estatisticas-subpage" class="channel-page">
+                            <h3>Estatísticas</h3>
+                            <p>Em construção.</p>
                         </div>
                     </div>
                 </div>
@@ -180,7 +186,7 @@
     <!-- MODAL DE CANAL -->
     <div id="channel-modal" class="modal">
         <div class="modal-content">
-            <span class="close-button" onclick="closeModal('channel-modal' )">&times;</span>
+            <span class="close-button" onclick="closeModal('channel-modal')">&times;</span>
             <h3 id="modal-title">Adicionar Novo Canal</h3>
             <form id="channel-form">
                 <input type="hidden" id="channel-id-input">

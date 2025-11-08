@@ -1,6 +1,6 @@
 /* Reset Básico e Configurações Globais */
 * { margin: 0; padding: 0; box-sizing: border-box; }
-body { font-family: 'Inter', sans-serif; background-color: var(--cor-fundo); color: var(--cor-principal); -webkit-font-smoothing: antialiased; }
+body { font-family: 'Inter', sans-serif; background-color: var(--cor-fundo ); color: var(--cor-principal); -webkit-font-smoothing: antialiased; }
 :root { --cor-fundo: #0f172a; --cor-sidebar: #1e293b; --cor-principal: #f8fafc; --cor-secundaria: #94a3b8; --cor-borda: #334155; --cor-card: #1e293b; --cor-azul-primario: #3b82f6; --cor-azul-hover: #2563eb; --cor-verde: #22c55e; --cor-amarelo: #f59e0b; --cor-vermelho: #ef4444; --cor-cinza: #64748b; }
 
 /* Layout Principal */
@@ -82,7 +82,7 @@ textarea { resize: vertical; }
 /* Página de Gerenciamento de Canal */
 .channel-layout { display: flex; gap: 2rem; margin-top: 1rem; }
 .channel-sidebar { width: 200px; flex-shrink: 0; display: flex; flex-direction: column; gap: 0.5rem; }
-.channel-nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border-radius: 6px; text-decoration: none; color: var(--cor-secundaria); font-weight: 500; transition: background-color 0.2s, color 0.2s; }
+.channel-nav-item { display: flex; align-items: center; gap: 0.75rem; padding: 0.75rem 1rem; border-radius: 6px; text-decoration: none; color: var(--cor-secundaria); font-weight: 500; cursor: pointer; transition: background-color 0.2s, color 0.2s; }
 .channel-nav-item:hover { background-color: var(--cor-borda); color: var(--cor-principal); }
 .channel-nav-item.active { background-color: var(--cor-azul-primario); color: white; }
 .channel-content { flex: 1; }
@@ -92,10 +92,19 @@ textarea { resize: vertical; }
 .subpage-header h3 { font-size: 1.5rem; font-weight: 600; }
 .upload-buttons { display: flex; gap: 1rem; }
 
-/* ***** NOVOS ESTILOS PARA AS ABAS ***** */
+/* Abas da Biblioteca */
 .tabs-container { display: flex; border-bottom: 1px solid var(--cor-borda); margin-bottom: 1.5rem; }
 .tab-button { background: none; border: none; color: var(--cor-secundaria); padding: 0.75rem 1.25rem; cursor: pointer; font-size: 1rem; font-weight: 500; border-bottom: 2px solid transparent; transition: color 0.2s, border-color 0.2s; }
 .tab-button:hover { color: var(--cor-principal); }
 .tab-button.active { color: var(--cor-azul-primario); border-bottom-color: var(--cor-azul-primario); font-weight: 600; }
 .tab-content { display: none; }
 .tab-content.active { display: block; }
+
+/* ***** NOVOS ESTILOS PARA AGENDAMENTO EM MASSA ***** */
+.card { background-color: var(--cor-card); padding: 1.5rem 2rem; border-radius: 8px; border: 1px solid var(--cor-borda); }
+.card h4 { font-size: 1.25rem; margin-bottom: 0.5rem; }
+.card .card-subtitle { color: var(--cor-secundaria); margin-bottom: 1.5rem; }
+.status-log { margin-top: 1.5rem; background-color: var(--cor-fundo); border-radius: 6px; padding: 1rem; height: 200px; overflow-y: auto; font-family: 'Courier New', Courier, monospace; font-size: 0.9rem; }
+.status-log p { margin-bottom: 0.5rem; }
+.status-log .log-success { color: var(--cor-verde); }
+.status-log .log-error { color: var(--cor-vermelho); }

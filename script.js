@@ -124,13 +124,7 @@ async function renderizarBiblioteca(canalId) {
             videosTableBody.innerHTML = '';
             videosRes.items.forEach(item => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${item.name}</td>
-                    <td>Disponível</td>
-                    <td class="actions">
-                        <button class="btn-icon-table remove-icon" title="Remover"><i data-feather="trash-2"></i></button>
-                    </td>
-                `;
+                tr.innerHTML = `<td>${item.name}</td><td>Disponível</td><td class="actions"><button class="btn-icon-table remove-icon" title="Remover"><i data-feather="trash-2"></i></button></td>`;
                 videosTableBody.appendChild(tr);
             });
         }
@@ -141,13 +135,7 @@ async function renderizarBiblioteca(canalId) {
             thumbnailsTableBody.innerHTML = '';
             thumbnailsRes.items.forEach(item => {
                 const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td>${item.name}</td>
-                    <td>Disponível</td>
-                    <td class="actions">
-                        <button class="btn-icon-table remove-icon" title="Remover"><i data-feather="trash-2"></i></button>
-                    </td>
-                `;
+                tr.innerHTML = `<td>${item.name}</td><td>Disponível</td><td class="actions"><button class="btn-icon-table remove-icon" title="Remover"><i data-feather="trash-2"></i></button></td>`;
                 thumbnailsTableBody.appendChild(tr);
             });
         }
@@ -164,9 +152,9 @@ async function renderizarBiblioteca(canalId) {
 // ===================================================================
 
 function navigateTo(pageId) {
-    document.querySelectorAll('.main-content .page').forEach(page => page.classList.remove('active'));
+    document.querySelectorAll('.main-content > .page').forEach(page => page.classList.remove('active'));
     document.getElementById(`${pageId}-page`).classList.add('active');
-    document.querySelectorAll('.nav-item').forEach(item => {
+    document.querySelectorAll('.sidebar-nav .nav-item').forEach(item => {
         item.classList.toggle('active', item.dataset.page === pageId);
     });
 }
@@ -176,8 +164,8 @@ function gerenciarCanal(docId) {
     if (!canalAtual) return;
     document.getElementById('channel-management-title').textContent = `Gerenciamento: ${canalAtual.nome}`;
     navigateTo('channel-management');
+    switchSubpage('biblioteca'); // Define a subpágina inicial
     renderizarBiblioteca(canalAtual.docId);
-    switchTab('videos'); // Garante que a aba de vídeos seja a padrão
 }
 
 function switchTab(tabName) {
@@ -189,6 +177,18 @@ function switchTab(tabName) {
     });
 }
 
+function switchSubpage(subpageId) {
+    document.querySelectorAll('.channel-page').forEach(page => {
+        page.classList.toggle('active', page.id === `${subpageId}-subpage`);
+    });
+    document.querySelectorAll('.channel-nav-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.subpage === subpageId);
+    });
+    if (subpageId === 'biblioteca') {
+        switchTab('videos');
+    }
+}
+
 // ===================================================================
 // FUNÇÕES DE MANIPULAÇÃO DE DADOS (CRUD - Canais)
 // ===================================================================
@@ -198,54 +198,61 @@ async function adicionarCanal(nome, youtubeId) {
         const ultimoCanalSnapshot = await db.collection('canais').orderBy('id', 'desc').limit(1).get();
         const novoId = ultimoCanalSnapshot.empty ? 1 : ultimoCanalSnapshot.docs[0].data().id + 1;
         await db.collection('canais').add({
-            id: novoId, nome: nome, youtubeId: youtubeId,
-            dataCriacao: new Date().toISOString().split('T')[0], status: 'Ativo'
+            id: novoId,
+            nome: nome,
+            youtubeId: youtubeId,
+            dataCriacao: new Date().toISOString().split('T')[0],
+            status: 'Ativo'
         });
         renderizarDashboard();
-    } catch (error) { console.error("Erro ao adicionar canal: ", error); }
-}
-
-async function removerCanal(docId) {
-    if (confirm("Tem certeza que deseja remover este canal?")) {
-        try {
-            await db.collection('canais').doc(docId).delete();
-            renderizarDashboard();
-        } catch (error) { console.error("Erro ao remover canal: ", error); }
+        closeModal('channel-modal');
+    } catch (error) {
+        console.error("Erro ao adicionar canal: ", error);
     }
 }
 
 async function editarCanal(docId, nome, youtubeId) {
     try {
-        await db.collection('canais').doc(docId).update({ nome: nome, youtubeId: youtubeId });
+        await db.collection('canais').doc(docId).update({
+            nome: nome,
+            youtubeId: youtubeId
+        });
         renderizarDashboard();
-    } catch (error) { console.error("Erro ao editar canal: ", error); }
+        closeModal('channel-modal');
+    } catch (error) {
+        console.error("Erro ao editar canal: ", error);
+    }
+}
+
+async function removerCanal(docId) {
+    if (confirm('Tem certeza que deseja remover este canal?')) {
+        try {
+            await db.collection('canais').doc(docId).delete();
+            renderizarDashboard();
+        } catch (error) {
+            console.error("Erro ao remover canal: ", error);
+        }
+    }
 }
 
 // ===================================================================
-// FUNÇÕES DE UPLOAD (Cloud Storage)
+// LÓGICA DE UPLOAD DE ARQUIVOS
 // ===================================================================
 
-function uploadFiles(fileList, tipo) {
-    if (!canalAtual || !auth.currentUser) {
-        alert("Erro: Canal não selecionado ou usuário não autenticado.");
-        return;
-    }
-    const pasta = tipo === 'video' ? 'videos' : 'thumbnails';
-    Array.from(fileList).forEach(file => {
-        console.log(`Iniciando upload de ${file.name}...`);
-        const storagePath = `canais/${canalAtual.docId}/${pasta}/${file.name}`;
-        const task = storage.ref(storagePath).put(file);
-        task.on('state_changed',
-            snapshot => {
-                const percentage = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                console.log(`Upload de ${file.name}: ${percentage.toFixed(2)}%`);
+function uploadFiles(files, path) {
+    const fileArray = Array.from(files);
+    fileArray.forEach(file => {
+        const uploadTask = storage.ref(`${path}/${file.name}`).put(file);
+        uploadTask.on('state_changed',
+            (snapshot) => {
+                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                console.log(`Upload de ${file.name}: ${progress.toFixed(2)}% concluído.`);
             },
-            err => {
-                console.error(`Erro no upload de ${file.name}:`, err);
-                alert(`Falha no upload de ${file.name}. Verifique o console (F12).`);
+            (error) => {
+                console.error(`Erro no upload de ${file.name}:`, error);
             },
             () => {
-                console.log(`Upload de ${file.name} concluído!`);
+                console.log(`Upload de ${file.name} concluído com sucesso!`);
                 renderizarBiblioteca(canalAtual.docId);
             }
         );
@@ -253,11 +260,11 @@ function uploadFiles(fileList, tipo) {
 }
 
 // ===================================================================
-// FUNÇÕES DOS MODAIS (Pop-ups)
+// MODAIS E INTERAÇÕES DA UI
 // ===================================================================
 
-function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
 function openModal(modalId) { document.getElementById(modalId).style.display = 'flex'; }
+function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
 
 function openAddChannelModal() {
     document.getElementById('channel-form').reset();
@@ -270,71 +277,111 @@ function openEditChannelModal(docId) {
     const canal = canaisCache.find(c => c.docId === docId);
     if (!canal) return;
     document.getElementById('modal-title').textContent = 'Editar Canal';
-    document.getElementById('channel-id-input').value = canal.docId;
+    document.getElementById('channel-id-input').value = docId;
     document.getElementById('channel-name').value = canal.nome;
     document.getElementById('channel-youtube-id').value = canal.youtubeId;
     openModal('channel-modal');
 }
 
 // ===================================================================
-// EVENT LISTENERS (OUVINTES DE EVENTOS) - SEÇÃO CORRIGIDA
+// EVENT LISTENERS (OUVINTES DE EVENTOS)
 // ===================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
-    // --- EVENTOS DE AUTENTICAÇÃO ---
+    // Formulário de Login
     const loginForm = document.getElementById('login-form');
-    loginForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const email = document.getElementById('login-email').value;
-        const password = document.getElementById('login-password').value;
-        fazerLogin(email, password);
-    });
+    if (loginForm) {
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            fazerLogin(email, password);
+        });
+    }
 
+    // Botão de Logout
     const btnLogout = document.getElementById('btn-logout');
-    btnLogout.addEventListener('click', fazerLogout);
+    if (btnLogout) {
+        btnLogout.addEventListener('click', fazerLogout);
+    }
 
-    // --- EVENTOS DE NAVEGAÇÃO PRINCIPAL ---
-    document.querySelectorAll('.nav-item').forEach(item => {
+    // Navegação principal da Sidebar
+    document.querySelectorAll('.sidebar-nav .nav-item').forEach(item => {
         item.addEventListener('click', (e) => {
             e.preventDefault();
             navigateTo(item.dataset.page);
         });
     });
 
-    document.getElementById('btn-add-channel').addEventListener('click', openAddChannelModal);
-    document.getElementById('btn-back-to-dashboard').addEventListener('click', () => navigateTo('dashboard'));
+    // Botão para adicionar canal
+    const btnAddChannel = document.getElementById('btn-add-channel');
+    if (btnAddChannel) {
+        btnAddChannel.addEventListener('click', openAddChannelModal);
+    }
 
-    // --- EVENTOS DO MODAL DE CANAL ---
-    document.getElementById('channel-form').addEventListener('submit', (e) => {
-        e.preventDefault();
-        const docId = document.getElementById('channel-id-input').value;
-        const nome = document.getElementById('channel-name').value;
-        const youtubeId = document.getElementById('channel-youtube-id').value;
+    // Formulário do modal de canal (Adicionar/Editar)
+    const channelForm = document.getElementById('channel-form');
+    if (channelForm) {
+        channelForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const docId = document.getElementById('channel-id-input').value;
+            const nome = document.getElementById('channel-name').value;
+            const youtubeId = document.getElementById('channel-youtube-id').value;
+            if (docId) {
+                editarCanal(docId, nome, youtubeId);
+            } else {
+                adicionarCanal(nome, youtubeId);
+            }
+        });
+    }
 
-        if (docId) {
-            editarCanal(docId, nome, youtubeId);
-        } else {
-            adicionarCanal(nome, youtubeId);
-        }
-        closeModal('channel-modal');
-    });
+    // Botão de voltar para o dashboard
+    const btnBack = document.getElementById('btn-back-to-dashboard');
+    if (btnBack) {
+        btnBack.addEventListener('click', () => navigateTo('dashboard'));
+    }
 
-    // --- EVENTOS DE UPLOAD ---
+    // Botões de upload na biblioteca
     const btnUploadVideos = document.getElementById('btn-upload-videos');
     const videoFileInput = document.getElementById('video-file-input');
+    if (btnUploadVideos) {
+        btnUploadVideos.addEventListener('click', () => videoFileInput.click());
+        videoFileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                uploadFiles(e.target.files, `canais/${canalAtual.docId}/videos`);
+            }
+        });
+    }
+
     const btnUploadThumbnails = document.getElementById('btn-upload-thumbnails');
     const thumbnailFileInput = document.getElementById('thumbnail-file-input');
-
-    btnUploadVideos.addEventListener('click', () => videoFileInput.click());
-    videoFileInput.addEventListener('change', (e) => uploadFiles(e.target.files, 'video'));
-
-    btnUploadThumbnails.addEventListener('click', () => thumbnailFileInput.click());
-    thumbnailFileInput.addEventListener('change', (e) => uploadFiles(e.target.files, 'thumbnail'));
-
-    // --- EVENTOS DAS ABAS DA BIBLIOTECA ---
+    if (btnUploadThumbnails) {
+        btnUploadThumbnails.addEventListener('click', () => thumbnailFileInput.click());
+        thumbnailFileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                uploadFiles(e.target.files, `canais/${canalAtual.docId}/thumbnails`);
+            }
+        });
+    }
+    
+    // Navegação das abas da biblioteca
     document.querySelectorAll('.tab-button').forEach(button => {
-        button.addEventListener('click', () => {
-            switchTab(button.dataset.tab);
+        button.addEventListener('click', () => switchTab(button.dataset.tab));
+    });
+
+    // Navegação das subpáginas do canal
+    document.querySelectorAll('.channel-nav-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            switchSubpage(item.dataset.subpage);
         });
     });
+
+    // ***** NOVO EVENT LISTENER PARA O BOTÃO DE IMPORTAR CSV *****
+    const btnImportCsv = document.getElementById('btn-import-csv');
+    const csvFileInput = document.getElementById('csv-file-input');
+    if(btnImportCsv) {
+        btnImportCsv.addEventListener('click', () => csvFileInput.click());
+        // A lógica de leitura do arquivo será adicionada aqui no próximo passo
+    }
 });
