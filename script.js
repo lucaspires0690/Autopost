@@ -387,7 +387,18 @@ function baixarModeloCSV() {
 
 async function editarAgendamento(docId, dados) {
     try {
-        await db.collection('agendamentos').doc(docId).update(dados);
+        const dataHora = new Date(`${dados.data_publicacao}T${dados.hora_publicacao}`);
+        
+        const dadosParaSalvar = {
+            nomeVideo: dados.nome_video,
+            nomeThumbnail: dados.nome_thumbnail,
+            titulo: dados.titulo,
+            descricao: dados.descricao,
+            tags: dados.tags,
+            dataHoraPublicacao: firebase.firestore.Timestamp.fromDate(dataHora)
+        };
+
+        await db.collection('agendamentos').doc(docId).update(dadosParaSalvar);
         renderizarAgendamentos(canalAtual.docId);
         closeModal('schedule-modal');
     } catch (error) {
@@ -437,8 +448,10 @@ function openEditScheduleModal(docId) {
     if (!agendamento) return;
 
     document.getElementById('schedule-id-input').value = docId;
-    document.getElementById('schedule-title').value = agendamento.titulo;
-    document.getElementById('schedule-description').value = agendamento.descricao;
+    document.getElementById('schedule-nome-video').value = agendamento.nomeVideo;
+    document.getElementById('schedule-nome-thumbnail').value = agendamento.nomeThumbnail;
+    document.getElementById('schedule-titulo').value = agendamento.titulo;
+    document.getElementById('schedule-descricao').value = agendamento.descricao;
     document.getElementById('schedule-tags').value = agendamento.tags;
 
     const data = agendamento.dataHoraPublicacao.toDate();
@@ -447,7 +460,9 @@ function openEditScheduleModal(docId) {
     const dia = String(data.getDate()).padStart(2, '0');
     const hora = String(data.getHours()).padStart(2, '0');
     const minuto = String(data.getMinutes()).padStart(2, '0');
-    document.getElementById('schedule-datetime').value = `${ano}-${mes}-${dia}T${hora}:${minuto}`;
+    
+    document.getElementById('schedule-data-publicacao').value = `${ano}-${mes}-${dia}`;
+    document.getElementById('schedule-hora-publicacao').value = `${hora}:${minuto}`;
     
     openModal('schedule-modal');
 }
@@ -511,10 +526,13 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             const docId = document.getElementById('schedule-id-input').value;
             const dados = {
-                titulo: document.getElementById('schedule-title').value,
-                descricao: document.getElementById('schedule-description').value,
+                nome_video: document.getElementById('schedule-nome-video').value,
+                nome_thumbnail: document.getElementById('schedule-nome-thumbnail').value,
+                titulo: document.getElementById('schedule-titulo').value,
+                descricao: document.getElementById('schedule-descricao').value,
                 tags: document.getElementById('schedule-tags').value,
-                dataHoraPublicacao: firebase.firestore.Timestamp.fromDate(new Date(document.getElementById('schedule-datetime').value))
+                data_publicacao: document.getElementById('schedule-data-publicacao').value,
+                hora_publicacao: document.getElementById('schedule-hora-publicacao').value
             };
             editarAgendamento(docId, dados);
         });
