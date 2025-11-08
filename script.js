@@ -2,27 +2,27 @@
 // PASSO 1: CONFIGURAÇÃO E INICIALIZAÇÃO DO FIREBASE
 // ===================================================================
 
-// Cole aqui a configuração do Firebase que você copiou
 const firebaseConfig = {
   apiKey: "AIzaSyDrKMIudQUfLS0j4tG-kEdkVksvSnZaIPQ",
   authDomain: "autopost-477601.firebaseapp.com",
   projectId: "autopost-477601",
-  storageBucket: "autopost-477601.firebasestorage.app",
+  storageBucket: "autopost-477601.appspot.com", // ATENÇÃO: O domínio do Storage é diferente!
   messagingSenderId: "191333777971",
   appId: "1:191333777971:web:5aab90e1f1e39d19f61946",
   measurementId: "G-X4SBER5XVP"
 };
 
-// Inicializa o Firebase e o Firestore
+// Inicializa os serviços do Firebase
 firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore(); // Usando a sintaxe compatível
+const db = firebase.firestore();
+const storage = firebase.storage(); // Nova inicialização para o Storage
 
 // ===================================================================
 // VARIÁVEIS GLOBAIS E ESTADO DA APLICAÇÃO
 // ===================================================================
 
 let canaisCache = [];
-let canalAtual = null;
+let canalAtual = null; // Guarda o objeto do canal que está sendo gerenciado
 
 // ===================================================================
 // FUNÇÕES DE RENDERIZAÇÃO (DESENHAR NA TELA)
@@ -67,7 +67,7 @@ async function renderizarDashboard() {
 }
 
 // ===================================================================
-// LÓGICA DE NAVEGAÇÃO
+// LÓGICA DE NAVEGAÇÃO E GERENCIAMENTO DE PÁGINAS
 // ===================================================================
 
 function navigateTo(pageId) {
@@ -83,10 +83,11 @@ function gerenciarCanal(docId) {
     if (!canalAtual) return;
     document.getElementById('channel-management-title').textContent = `Gerenciamento: ${canalAtual.nome}`;
     navigateTo('channel-management');
+    // Futuramente, aqui carregaremos os vídeos deste canal
 }
 
 // ===================================================================
-// FUNÇÕES DE MANIPULAÇÃO DE DADOS (CRUD)
+// FUNÇÕES DE MANIPULAÇÃO DE DADOS (CRUD - Canais)
 // ===================================================================
 
 async function adicionarCanal(nome, youtubeId) {
@@ -101,7 +102,6 @@ async function adicionarCanal(nome, youtubeId) {
             dataCriacao: new Date().toISOString().split('T')[0],
             status: 'Ativo'
         });
-        console.log("Canal adicionado com sucesso!");
         renderizarDashboard();
     } catch (error) {
         console.error("Erro ao adicionar canal: ", error);
@@ -109,10 +109,9 @@ async function adicionarCanal(nome, youtubeId) {
 }
 
 async function removerCanal(docId) {
-    if (confirm("Tem certeza que deseja remover este canal do banco de dados?")) {
+    if (confirm("Tem certeza que deseja remover este canal?")) {
         try {
             await db.collection('canais').doc(docId).delete();
-            console.log("Canal removido com sucesso!");
             renderizarDashboard();
         } catch (error) {
             console.error("Erro ao remover canal: ", error);
@@ -126,12 +125,51 @@ async function editarCanal(docId, nome, youtubeId) {
             nome: nome,
             youtubeId: youtubeId
         });
-        console.log("Canal atualizado com sucesso!");
         renderizarDashboard();
     } catch (error) {
         console.error("Erro ao editar canal: ", error);
     }
 }
+
+// ===================================================================
+// FUNÇÕES DE UPLOAD (Cloud Storage)
+// ===================================================================
+
+function uploadFiles(fileList, tipo) {
+    if (!canalAtual) {
+        alert("Erro: Nenhum canal selecionado para o upload.");
+        return;
+    }
+
+    const pasta = tipo === 'video' ? 'videos' : 'thumbnails';
+    
+    // Transforma a FileList em um Array para usar o forEach
+    Array.from(fileList).forEach(file => {
+        console.log(`Iniciando upload de ${file.name}...`);
+        
+        // Cria o caminho no Storage: canais/{id_do_canal}/videos/{nome_do_arquivo}
+        const storagePath = `canais/${canalAtual.docId}/${pasta}/${file.name}`;
+        const storageRef = storage.ref(storagePath);
+
+        const task = storageRef.put(file);
+
+        // Acompanha o progresso do upload
+        task.on('state_changed',
+            function progress(snapshot) {
+                const percentage = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                console.log(`Upload de ${file.name}: ${percentage.toFixed(2)}% concluído.`);
+            },
+            function error(err) {
+                console.error(`Erro no upload de ${file.name}:`, err);
+            },
+            function complete() {
+                console.log(`Upload de ${file.name} concluído com sucesso!`);
+                // Futuramente, aqui vamos atualizar a tabela da biblioteca
+            }
+        );
+    });
+}
+
 
 // ===================================================================
 // FUNÇÕES DOS MODAIS (Pop-ups)
@@ -167,6 +205,7 @@ function openEditChannelModal(docId) {
 // ===================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Navegação principal
     document.querySelectorAll('.nav-item').forEach(item => {
         item.addEventListener('click', (e) => {
             e.preventDefault();
@@ -174,9 +213,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Botões do Dashboard
     document.getElementById('btn-add-channel').addEventListener('click', openAddChannelModal);
     document.getElementById('btn-back-to-dashboard').addEventListener('click', () => navigateTo('dashboard'));
 
+    // Formulário de Canal
     document.getElementById('channel-form').addEventListener('submit', (e) => {
         e.preventDefault();
         const docId = document.getElementById('channel-id-input').value;
@@ -190,6 +231,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         closeModal('channel-modal');
     });
+
+    // --- NOVOS EVENTOS DE UPLOAD ---
+    const btnUploadVideos = document.getElementById('btn-upload-videos');
+    const videoFileInput = document.getElementById('video-file-input');
+    const btnUploadThumbnails = document.getElementById('btn-upload-thumbnails');
+    const thumbnailFileInput = document.getElementById('thumbnail-file-input');
+
+    // Aciona o input de vídeo quando o botão for clicado
+    btnUploadVideos.addEventListener('click', () => videoFileInput.click());
+    // Chama a função de upload quando arquivos de vídeo forem selecionados
+    videoFileInput.addEventListener('change', (e) => uploadFiles(e.target.files, 'video'));
+
+    // Aciona o input de thumbnail quando o botão for clicado
+    btnUploadThumbnails.addEventListener('click', () => thumbnailFileInput.click());
+    // Chama a função de upload quando arquivos de thumbnail forem selecionados
+    thumbnailFileInput.addEventListener('change', (e) => uploadFiles(e.target.files, 'thumbnail'));
+
 
     // Inicialização
     navigateTo('dashboard');
