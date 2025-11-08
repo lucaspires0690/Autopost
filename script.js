@@ -9,15 +9,21 @@ let dadosSimulados = {
         { id: 3, nome: "Canal de Testes", youtubeId: "UC_andanother", horario: "15:00", status: "Inativo" },
     ],
     biblioteca: [
-        { id: 1, nome: "video_final_01.mp4", duracao: "10:25", status: "Na Biblioteca", titulo: "Título Padrão 1", descricao: "Descrição padrão 1.", tags: "tag1" },
-        { id: 2, nome: "tutorial_novo_feature.mp4", duracao: "05:12", status: "Agendado", titulo: "Como usar a Nova Feature", descricao: "Neste tutorial completo, mostramos o passo a passo para ativar e usar a nova feature do nosso sistema.", tags: "tutorial, feature, guia" },
-        { id: 3, nome: "video_antigo_01.mp4", duracao: "15:40", status: "Postado", titulo: "Review do Produto X", descricao: "Análise completa e sincera do produto X. Vale a pena comprar em 2025?", tags: "review, produto x, unboxing" },
-        { id: 4, nome: "video_para_agendar_02.mp4", duracao: "08:15", status: "Na Biblioteca", titulo: "Título Padrão 2", descricao: "Descrição padrão 2.", tags: "tag2" },
-        { id: 5, nome: "video_para_agendar_03.mp4", duracao: "12:30", status: "Na Biblioteca", titulo: "Título Padrão 3", descricao: "Descrição padrão 3.", tags: "tag3" },
+        // Vídeos do Canal Principal (id: 1)
+        { id: 1, idCanal: 1, nome: "video_final_01.mp4", duracao: "10:25", status: "Na Biblioteca", titulo: "Título Padrão 1", descricao: "Descrição padrão 1.", tags: "tag1" },
+        { id: 2, idCanal: 1, nome: "tutorial_novo_feature.mp4", duracao: "05:12", status: "Agendado", titulo: "Como usar a Nova Feature", descricao: "Neste tutorial completo, mostramos o passo a passo para ativar e usar a nova feature do nosso sistema.", tags: "tutorial, feature, guia" },
+        
+        // Vídeos do Canal de Cortes (id: 2)
+        { id: 3, idCanal: 2, nome: "corte_podcast_ep15.mp4", duracao: "01:15", status: "Postado", titulo: "Melhor Momento do Podcast #15", descricao: "O trecho mais engraçado do nosso último podcast.", tags: "podcast, cortes, comedia" },
+        { id: 4, idCanal: 2, nome: "reacao_trailer_filme.mp4", duracao: "03:40", status: "Na Biblioteca", titulo: "Reagindo ao Trailer", descricao: "Minha reação sincera ao novo trailer do filme de ação.", tags: "react, trailer, reacao" },
+
+        // Vídeos do Canal de Testes (id: 3)
+        { id: 5, idCanal: 3, nome: "teste_upload_001.mp4", duracao: "00:30", status: "Na Biblioteca", titulo: "Vídeo de Teste", descricao: "Apenas um teste.", tags: "teste" },
     ],
     agendamentosHoje: 1,
     falhas: 0,
     linhasPlanilha: [],
+    canalSelecionadoId: null, // Novo: para saber qual canal está ativo na biblioteca
 };
 
 function renderizarTabelaCanais() {
@@ -40,11 +46,18 @@ function renderizarTabelaCanais() {
     feather.replace();
 }
 
-function renderizarTabelaBiblioteca() {
+function renderizarTabelaBiblioteca(idCanal) {
     const tbody = document.querySelector("#library-table tbody");
     if (!tbody) return;
     tbody.innerHTML = '';
-    dadosSimulados.biblioteca.forEach(video => {
+    const videosDoCanal = dadosSimulados.biblioteca.filter(v => v.idCanal === idCanal);
+
+    if (videosDoCanal.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align: center; padding: 40px;">Nenhum vídeo encontrado para este canal.</td></tr>';
+        return;
+    }
+
+    videosDoCanal.forEach(video => {
         let statusClass = '';
         switch (video.status) {
             case 'Na Biblioteca': statusClass = 'status-biblioteca'; break;
@@ -67,6 +80,30 @@ function renderizarTabelaBiblioteca() {
     feather.replace();
 }
 
+function renderizarListaDeCanaisNaBiblioteca() {
+    const grid = document.querySelector("#library-channel-list .channel-grid");
+    if (!grid) return;
+    grid.innerHTML = '';
+    dadosSimulados.canais.forEach(canal => {
+        const videosNesteCanal = dadosSimulados.biblioteca.filter(v => v.idCanal === canal.id).length;
+        const videosAgendados = dadosSimulados.biblioteca.filter(v => v.idCanal === canal.id && v.status === 'Agendado').length;
+        const card = `
+            <div class="channel-card" onclick="showVideoList(${canal.id})">
+                <div class="channel-card-header">
+                    <i data-feather="tv" class="channel-card-icon"></i>
+                    <span class="channel-card-name">${canal.nome}</span>
+                </div>
+                <div class="channel-card-stats">
+                    <span>${videosNesteCanal} vídeos</span>
+                    <span>${videosAgendados} agendados</span>
+                </div>
+            </div>
+        `;
+        grid.innerHTML += card;
+    });
+    feather.replace();
+}
+
 function renderizarDashboard() {
     document.getElementById('stat-canais-ativos').textContent = dadosSimulados.canais.filter(c => c.status === 'Ativo').length;
     document.getElementById('stat-videos-biblioteca').textContent = dadosSimulados.biblioteca.length;
@@ -84,10 +121,31 @@ function navigateTo(pageId) {
     document.getElementById(pageId)?.classList.add('active');
     document.querySelectorAll('.nav-link').forEach(link => link.classList.remove('active'));
     document.querySelector(`.nav-link[onclick="navigateTo('${pageId}')"]`)?.classList.add('active');
-    if (pageId === 'library') renderizarTabelaBiblioteca();
-    if (pageId === 'dashboard') renderizarTabelaCanais();
+    
+    if (pageId === 'library') showChannelList();
+    if (pageId === 'dashboard') renderizarDashboard();
     if (pageId === 'bulk-schedule') document.getElementById('bulk-results-section').classList.add('hidden');
+    
     feather.replace();
+}
+
+function showChannelList() {
+    document.getElementById('library-title').textContent = 'Biblioteca de Mídia';
+    document.getElementById('library-upload-btn').classList.add('hidden');
+    document.getElementById('library-channel-list').classList.remove('hidden');
+    document.getElementById('library-video-list').classList.add('hidden');
+    renderizarListaDeCanaisNaBiblioteca();
+}
+
+function showVideoList(idCanal) {
+    const canal = dadosSimulados.canais.find(c => c.id === idCanal);
+    if (!canal) return;
+    dadosSimulados.canalSelecionadoId = idCanal;
+    document.getElementById('library-title').textContent = `Biblioteca: ${canal.nome}`;
+    document.getElementById('library-upload-btn').classList.remove('hidden');
+    document.getElementById('library-channel-list').classList.add('hidden');
+    document.getElementById('library-video-list').classList.remove('hidden');
+    renderizarTabelaBiblioteca(idCanal);
 }
 
 function closeModal(modalId) {
@@ -99,24 +157,42 @@ function closeModal(modalId) {
 // =================================================================================
 
 function removerCanal(id) {
-    if (confirm("Tem certeza que deseja remover este canal?")) {
+    if (confirm("Tem certeza que deseja remover este canal? Isso também removerá todos os vídeos associados a ele.")) {
         dadosSimulados.canais = dadosSimulados.canais.filter(c => c.id !== id);
+        dadosSimulados.biblioteca = dadosSimulados.biblioteca.filter(v => v.idCanal !== id);
         renderizarDashboard();
+        // Se estiver na página da biblioteca, volta para a lista de canais
+        if (document.getElementById('library').classList.contains('active')) {
+            showChannelList();
+        }
     }
 }
 
 function simularUpload() {
+    if (!dadosSimulados.canalSelecionadoId) {
+        alert("Erro: Nenhum canal selecionado.");
+        return;
+    }
     const novoId = dadosSimulados.biblioteca.length > 0 ? Math.max(...dadosSimulados.biblioteca.map(v => v.id)) + 1 : 1;
-    dadosSimulados.biblioteca.push({ id: novoId, nome: `novo_video_${novoId}.mp4`, duracao: "00:00", status: "Na Biblioteca", titulo: `Título Padrão ${novoId}`, descricao: `Descrição padrão ${novoId}.`, tags: `tag${novoId}` });
-    renderizarTabelaBiblioteca();
+    dadosSimulados.biblioteca.push({ 
+        id: novoId, 
+        idCanal: dadosSimulados.canalSelecionadoId,
+        nome: `novo_video_${novoId}.mp4`, 
+        duracao: "00:00", 
+        status: "Na Biblioteca", 
+        titulo: `Título Padrão ${novoId}`, 
+        descricao: `Descrição padrão ${novoId}.`, 
+        tags: `tag${novoId}` 
+    });
+    showVideoList(dadosSimulados.canalSelecionadoId); // Re-renderiza a lista de vídeos do canal atual
     renderizarDashboard();
-    alert("Novo vídeo simulado adicionado à biblioteca!");
+    alert("Novo vídeo simulado adicionado a este canal!");
 }
 
 function removerVideo(id) {
     if (confirm("Tem certeza que deseja remover este vídeo da biblioteca?")) {
         dadosSimulados.biblioteca = dadosSimulados.biblioteca.filter(v => v.id !== id);
-        renderizarTabelaBiblioteca();
+        showVideoList(dadosSimulados.canalSelecionadoId); // Re-renderiza a lista de vídeos do canal atual
         renderizarDashboard();
     }
 }
@@ -148,10 +224,13 @@ function openScheduleModal(videoId) {
     document.getElementById('schedule-video-name').textContent = video.nome;
     document.getElementById('schedule-video-id').value = video.id;
     const channelSelect = document.getElementById('schedule-channel');
-    channelSelect.innerHTML = '<option value="">Selecione um canal...</option>';
-    dadosSimulados.canais.filter(c => c.status === 'Ativo').forEach(canal => {
-        channelSelect.innerHTML += `<option value="${canal.id}">${canal.nome}</option>`;
-    });
+    channelSelect.innerHTML = ''; // Limpa
+    // No agendamento individual, só permite agendar para o canal ao qual o vídeo pertence
+    const canalDoVideo = dadosSimulados.canais.find(c => c.id === video.idCanal);
+    if (canalDoVideo) {
+        channelSelect.innerHTML += `<option value="${canalDoVideo.id}" selected>${canalDoVideo.nome}</option>`;
+        channelSelect.disabled = true; // Desativa a seleção, pois o canal já está definido
+    }
     document.getElementById('schedule-modal').classList.remove('hidden');
 }
 
@@ -177,18 +256,13 @@ function exportarPlanilhaParaAgendar() {
         return;
     }
 
-    const canalPrincipal = dadosSimulados.canais.find(c => c.status === 'Ativo');
-    if (!canalPrincipal) {
-        alert("Nenhum canal ativo encontrado para a simulação de agendamento.");
-        return;
-    }
-
     const separador = ';';
     const cabecalho = ["nome_do_arquivo", "titulo_do_video", "descricao", "tags", "nome_do_canal", "data_postagem (YYYY-MM-DD)", "hora_postagem (HH:MM)"].join(separador);
     
     let dataAtual = new Date();
     const linhas = videosParaAgendar.map(video => {
-        dataAtual.setDate(dataAtual.getDate() + 1); // Incrementa um dia para cada vídeo
+        const canalDoVideo = dadosSimulados.canais.find(c => c.id === video.idCanal);
+        dataAtual.setDate(dataAtual.getDate() + 1);
         const dataFormatada = dataAtual.toISOString().split('T')[0];
         const descricaoProtegida = `"${video.descricao.replace(/"/g, '""')}"`;
         
@@ -197,9 +271,9 @@ function exportarPlanilhaParaAgendar() {
             video.titulo,
             descricaoProtegida,
             video.tags,
-            canalPrincipal.nome, // Pré-preenche com o primeiro canal ativo
-            dataFormatada,      // Pré-preenche com a data consecutiva
-            canalPrincipal.horario // Pré-preenche com o horário padrão do canal
+            canalDoVideo ? canalDoVideo.nome : '', // Pré-preenche com o canal do vídeo
+            dataFormatada,
+            canalDoVideo ? canalDoVideo.horario : '09:00' // Usa o horário do canal ou um padrão
         ].join(separador);
     });
 
@@ -231,6 +305,7 @@ function processarResultadosPlanilha(results) {
         
         let erro = '';
         if (!video) erro = 'Vídeo não encontrado na biblioteca.';
+        else if (video.idCanal !== canal?.id) erro = 'Vídeo não pertence a este canal.'; // Nova validação
         else if (video.status !== 'Na Biblioteca') erro = 'Vídeo já agendado ou postado.';
         else if (!canal) erro = 'Canal não encontrado ou inativo.';
         else if (!data || !hora || isNaN(new Date(dataHora).getTime())) erro = 'Data ou hora inválida.';
@@ -275,9 +350,8 @@ function confirmarAgendamentoEmMassa() {
             }
         });
 
-        alert(`${linhasParaAgendar.length} vídeo(s) foram agendados com sucesso! Verifique a aba Biblioteca.`);
+        alert(`${linhasParaAgendar.length} vídeo(s) foram agendados com sucesso!`);
         document.getElementById('bulk-results-section').classList.add('hidden');
-        renderizarTabelaBiblioteca();
     }
 }
 
@@ -297,7 +371,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (canal) { canal.nome = nome; canal.youtubeId = youtubeId; }
         } else {
             const novoId = dadosSimulados.canais.length > 0 ? Math.max(...dadosSimulados.canais.map(c => c.id)) + 1 : 1;
-            dadosSimulados.canais.push({ id: novoId, nome, youtubeId, horario: "09:00", status: "Ativo" }); // Adicionado horário padrão
+            dadosSimulados.canais.push({ id: novoId, nome, youtubeId, horario: "09:00", status: "Ativo" });
         }
         renderizarDashboard();
         closeModal('channel-modal');
@@ -310,7 +384,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const video = dadosSimulados.biblioteca.find(v => v.id == videoId);
         if (video) {
             video.status = 'Agendado';
-            renderizarTabelaBiblioteca();
+            showVideoList(video.idCanal); // Re-renderiza a lista de vídeos do canal atual
             alert(`Vídeo "${video.nome}" agendado com sucesso!`);
         }
         closeModal('schedule-modal');

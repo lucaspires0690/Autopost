@@ -86,11 +86,22 @@
             <!-- Seção da Biblioteca -->
             <section id="library" class="page">
                 <div class="main-header">
-                    <h1>Biblioteca de Mídia</h1>
-                    <button class="btn btn-primary" onclick="simularUpload()"><i data-feather="upload-cloud"></i> Fazer Upload de Vídeos</button>
+                    <h1 id="library-title">Biblioteca de Mídia</h1>
+                    <button id="library-upload-btn" class="btn btn-primary hidden" onclick="simularUpload()"><i data-feather="upload-cloud"></i> Fazer Upload de Vídeos</button>
                 </div>
-                <div class="content-section">
-                    <h2>Backlog de Vídeos</h2>
+                
+                <!-- Nova Seção: Lista de Canais -->
+                <div id="library-channel-list" class="content-section">
+                    <h2>Selecione um Canal</h2>
+                    <div class="channel-grid">
+                        <!-- Cards dos canais serão inseridos aqui -->
+                    </div>
+                </div>
+
+                <!-- Seção da Tabela de Vídeos (inicialmente oculta) -->
+                <div id="library-video-list" class="content-section hidden">
+                    <button class="btn btn-secondary btn-back" onclick="showChannelList()"><i data-feather="arrow-left"></i> Voltar para Canais</button>
+                    <h2 id="library-video-list-title">Backlog de Vídeos</h2>
                     <div class="table-container">
                         <table id="library-table">
                             <thead>
