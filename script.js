@@ -46,7 +46,7 @@ function gisLoaded() {
     });
     gisReady = true;
     console.log("GIS client (Token Client) inicializado.");
-    checkGoogleApi READINESS();
+    checkGoogleApiReadiness(); // NOME CORRIGIDO
 }
 
 async function initializeGapiClient() {
@@ -57,7 +57,7 @@ async function initializeGapiClient() {
         } );
         gapiReady = true;
         console.log("GAPI client inicializado.");
-        checkGoogleApiReadiness();
+        checkGoogleApiReadiness(); // NOME CORRIGIDO
     } catch (err) {
         console.error("Erro ao inicializar GAPI client:", err);
         alert("Erro ao inicializar a integração com a API do YouTube. Verifique o console para detalhes.");
