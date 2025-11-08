@@ -6,7 +6,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyDrKMIudQUfLS0j4tG-kEdkVksvSnZaIPQ",
   authDomain: "autopost-477601.firebaseapp.com",
   projectId: "autopost-477601",
-  storageBucket: "autopost-477601.firebasestorage.app", // Corrigido para o novo bucket
+  storageBucket: "autopost-477601.firebasestorage.app",
   messagingSenderId: "191333777971",
   appId: "1:191333777971:web:5aab90e1f1e39d19f61946",
   measurementId: "G-X4SBER5XVP"
@@ -14,7 +14,7 @@ const firebaseConfig = {
 
 // Inicializa os serviços do Firebase
 firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth(); // Novo: serviço de autenticação
+const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();
 
@@ -29,19 +29,16 @@ let canalAtual = null;
 // LÓGICA DE AUTENTICAÇÃO E CONTROLE DE ACESSO
 // ===================================================================
 
-// Função principal que verifica o estado do login
 auth.onAuthStateChanged(user => {
     const loginPage = document.getElementById('login-page');
     const mainContainer = document.querySelector('.container');
 
     if (user) {
-        // Usuário está logado
         loginPage.style.display = 'none';
         mainContainer.style.display = 'flex';
-        feather.replace(); // Recarrega os ícones
-        renderizarDashboard(); // Carrega os dados do dashboard
+        feather.replace();
+        renderizarDashboard();
     } else {
-        // Usuário NÃO está logado
         loginPage.style.display = 'block';
         mainContainer.style.display = 'none';
     }
@@ -49,10 +46,9 @@ auth.onAuthStateChanged(user => {
 
 async function fazerLogin(email, password) {
     const errorMessage = document.getElementById('login-error-message');
-    errorMessage.textContent = ''; // Limpa mensagens de erro antigas
+    errorMessage.textContent = '';
     try {
         await auth.signInWithEmailAndPassword(email, password);
-        // O onAuthStateChanged vai cuidar de mostrar o dashboard
     } catch (error) {
         console.error("Erro de login:", error.code);
         if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
@@ -66,12 +62,10 @@ async function fazerLogin(email, password) {
 async function fazerLogout() {
     try {
         await auth.signOut();
-        // O onAuthStateChanged vai cuidar de mostrar a tela de login
     } catch (error) {
         console.error("Erro ao fazer logout:", error);
     }
 }
-
 
 // ===================================================================
 // FUNÇÕES DE RENDERIZAÇÃO (DESENHAR NA TELA)
@@ -115,6 +109,70 @@ async function renderizarDashboard() {
     }
 }
 
+// ***** NOVA FUNÇÃO *****
+async function renderizarBiblioteca(canalId) {
+    const videosTableBody = document.getElementById('videos-table').querySelector('tbody');
+    videosTableBody.innerHTML = '<tr><td colspan="4">Carregando mídia...</td></tr>';
+
+    try {
+        const storageRef = storage.ref(`canais/${canalId}`);
+        const res = await storageRef.listAll();
+        
+        const allFiles = [];
+        // Pega os vídeos
+        res.items.forEach(itemRef => {
+            if (itemRef.parent.name === 'videos' || itemRef.parent.name === 'thumbnails') {
+                 allFiles.push({
+                    nome: itemRef.name,
+                    tipo: itemRef.parent.name === 'videos' ? 'Vídeo' : 'Thumbnail',
+                    ref: itemRef
+                });
+            }
+        });
+         // O listAll() não é recursivo, então precisamos listar as subpastas
+        const videoPromises = res.prefixes.filter(p => p.name === 'videos').map(folderRef => folderRef.listAll());
+        const thumbPromises = res.prefixes.filter(p => p.name === 'thumbnails').map(folderRef => folderRef.listAll());
+
+        const folderResults = await Promise.all([...videoPromises, ...thumbPromises]);
+
+        folderResults.forEach(folderRes => {
+            folderRes.items.forEach(itemRef => {
+                 allFiles.push({
+                    nome: itemRef.name,
+                    tipo: itemRef.parent.name === 'videos' ? 'Vídeo' : 'Thumbnail',
+                    ref: itemRef
+                });
+            });
+        });
+
+
+        if (allFiles.length === 0) {
+            videosTableBody.innerHTML = '<tr><td colspan="4">Nenhuma mídia encontrada. Faça o upload de vídeos e thumbnails.</td></tr>';
+            return;
+        }
+
+        videosTableBody.innerHTML = '';
+        allFiles.forEach(file => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${file.nome}</td>
+                <td>${file.tipo}</td>
+                <td>Disponível</td>
+                <td class="actions">
+                    <button class="btn-icon-table remove-icon" title="Remover"><i data-feather="trash-2"></i></button>
+                </td>
+            `;
+            videosTableBody.appendChild(tr);
+        });
+        feather.replace();
+
+    } catch (error) {
+        console.error("Erro ao listar arquivos da biblioteca:", error);
+        videosTableBody.innerHTML = '<tr><td colspan="4">Erro ao carregar mídia.</td></tr>';
+    }
+}
+
+
 // ===================================================================
 // LÓGICA DE NAVEGAÇÃO E GERENCIAMENTO DE PÁGINAS
 // ===================================================================
@@ -127,11 +185,15 @@ function navigateTo(pageId) {
     });
 }
 
+// ***** FUNÇÃO MODIFICADA *****
 function gerenciarCanal(docId) {
     canalAtual = canaisCache.find(c => c.docId === docId);
     if (!canalAtual) return;
     document.getElementById('channel-management-title').textContent = `Gerenciamento: ${canalAtual.nome}`;
     navigateTo('channel-management');
+    
+    // Chama a nova função para carregar a biblioteca
+    renderizarBiblioteca(canalAtual.docId); 
 }
 
 // ===================================================================
@@ -214,6 +276,8 @@ function uploadFiles(fileList, tipo) {
             },
             function complete() {
                 console.log(`Upload de ${file.name} concluído com sucesso!`);
+                // Após o upload, atualiza a biblioteca para mostrar o novo arquivo
+                renderizarBiblioteca(canalAtual.docId);
             }
         );
     });
@@ -254,7 +318,6 @@ function openEditChannelModal(docId) {
 // ===================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
-    // --- EVENTOS DE AUTENTICAÇÃO ---
     const loginForm = document.getElementById('login-form');
     loginForm.addEventListener('submit', (e) => {
         e.preventDefault();
@@ -266,8 +329,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnLogout = document.getElementById('btn-logout');
     btnLogout.addEventListener('click', fazerLogout);
 
-
-    // --- EVENTOS DO DASHBOARD ---
     document.querySelectorAll('.nav-item').forEach(item => {
         item.addEventListener('click', (e) => {
             e.preventDefault();
@@ -292,7 +353,6 @@ document.addEventListener('DOMContentLoaded', () => {
         closeModal('channel-modal');
     });
 
-    // --- EVENTOS DE UPLOAD ---
     const btnUploadVideos = document.getElementById('btn-upload-videos');
     const videoFileInput = document.getElementById('video-file-input');
     const btnUploadThumbnails = document.getElementById('btn-upload-thumbnails');
@@ -303,6 +363,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
     btnUploadThumbnails.addEventListener('click', () => thumbnailFileInput.click());
     thumbnailFileInput.addEventListener('change', (e) => uploadFiles(e.target.files, 'thumbnail'));
-
-    // A inicialização agora é controlada pelo onAuthStateChanged
 });

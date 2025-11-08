@@ -4,21 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Autopost - Painel de Controle</title>
-    <link rel="stylesheet" href="style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- PÁGINA DE LOGIN -->
-    <div id="login-page" class="page active">
+    <!-- TELA DE LOGIN -->
+    <div id="login-page" style="display: none;">
         <div class="login-container">
             <div class="login-box">
                 <div class="sidebar-header">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="logo-icon"><path d="M12.0002 2.00002L4.00018 6.00002L12.0002 10L20.0002 6.00002L12.0002 2.00002Z" fill="#3b82f6"></path><path d="M4 6V18L12 22V10L4 6Z" fill="#2563eb"></path><path d="M20 6V18L12 22V10L20 6Z" fill="#60a5fa"></path></svg>
+                    <i data-feather="youtube" class="logo-icon"></i>
                     <h1>Autopost</h1>
                 </div>
+                <h2>Acesse seu painel</h2>
+                <p class="login-subtitle">Bem-vindo de volta! Por favor, insira seus dados.</p>
                 <form id="login-form">
                     <div class="form-group">
                         <label for="login-email">E-mail</label>
@@ -29,29 +31,31 @@
                         <input type="password" id="login-password" required>
                     </div>
                     <p id="login-error-message" class="error-message"></p>
-                    <button type="submit" class="btn btn-primary btn-full-width">Entrar</button>
+                    <button type="submit" class="btn btn-primary btn-full">Entrar</button>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- CONTEÚDO PRINCIPAL DA APLICAÇÃO (Escondido por padrão ) -->
+    <!-- CONTAINER PRINCIPAL DA APLICAÇÃO (escondido por padrão ) -->
     <div class="container" style="display: none;">
         <aside class="sidebar">
-            <div class="sidebar-header">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="logo-icon"><path d="M12.0002 2.00002L4.00018 6.00002L12.0002 10L20.0002 6.00002L12.0002 2.00002Z" fill="#3b82f6"></path><path d="M4 6V18L12 22V10L4 6Z" fill="#2563eb"></path><path d="M20 6V18L12 22V10L20 6Z" fill="#60a5fa"></path></svg>
-                <h1>Autopost</h1>
+            <div>
+                <div class="sidebar-header">
+                    <i data-feather="youtube" class="logo-icon"></i>
+                    <h1>Autopost</h1>
+                </div>
+                <nav class="sidebar-nav">
+                    <a href="#" class="nav-item active" data-page="dashboard">
+                        <i data-feather="grid"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <a href="#" class="nav-item" data-page="configuracoes">
+                        <i data-feather="settings"></i>
+                        <span>Configurações</span>
+                    </a>
+                </nav>
             </div>
-            <nav class="sidebar-nav">
-                <a href="#" class="nav-item active" data-page="dashboard">
-                    <i data-feather="home"></i>
-                    <span>Dashboard</span>
-                </a>
-                <a href="#" class="nav-item" data-page="configuracoes">
-                    <i data-feather="settings"></i>
-                    <span>Configurações</span>
-                </a>
-            </nav>
             <div class="sidebar-footer">
                  <button id="btn-logout" class="nav-item">
                     <i data-feather="log-out"></i>
@@ -61,13 +65,13 @@
         </aside>
 
         <main class="main-content">
-            <!-- Página do Dashboard -->
+            <!-- PÁGINA DO DASHBOARD -->
             <div id="dashboard-page" class="page active">
                 <header class="main-header">
-                    <h2>Meus Canais</h2>
+                    <h2>Canais</h2>
                     <button id="btn-add-channel" class="btn btn-primary">
                         <i data-feather="plus"></i>
-                        Adicionar Novo Canal
+                        Adicionar Canal
                     </button>
                 </header>
                 <div class="table-container">
@@ -82,52 +86,52 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <!-- Linhas dos canais serão inseridas aqui pelo JavaScript -->
+                            <!-- Canais serão inseridos aqui -->
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- Página de Gerenciamento de Canal -->
+            <!-- PÁGINA DE GERENCIAMENTO DE CANAL -->
             <div id="channel-management-page" class="page">
                 <header class="main-header">
                     <button id="btn-back-to-dashboard" class="btn btn-secondary">
                         <i data-feather="arrow-left"></i>
                         Voltar ao Dashboard
                     </button>
-                    <h2 id="channel-management-title">Gerenciamento do Canal</h2>
+                    <h2 id="channel-management-title">Gerenciamento</h2>
                 </header>
+
                 <div class="channel-layout">
-                    <nav class="channel-sidebar">
-                        <a href="#" class="channel-nav-item active" data-subpage="biblioteca">
+                    <aside class="channel-sidebar">
+                        <a href="#" class="channel-nav-item active">
                             <i data-feather="film"></i>
                             <span>Biblioteca</span>
                         </a>
-                        <a href="#" class="channel-nav-item" data-subpage="agendamento-massa">
+                        <a href="#" class="channel-nav-item">
                             <i data-feather="calendar"></i>
                             <span>Agend. em Massa</span>
                         </a>
-                        <a href="#" class="channel-nav-item" data-subpage="estatisticas">
+                        <a href="#" class="channel-nav-item">
                             <i data-feather="bar-chart-2"></i>
                             <span>Estatísticas</span>
                         </a>
-                    </nav>
+                    </aside>
                     <div class="channel-content">
-                        <!-- Subpágina da Biblioteca -->
-                        <div id="biblioteca-subpage" class="channel-page active">
+                        <div id="biblioteca-page" class="channel-page active">
                             <div class="subpage-header">
                                 <h3>Biblioteca de Mídia</h3>
                                 <div class="upload-buttons">
                                     <button id="btn-upload-videos" class="btn btn-success">
-                                        <i data-feather="video"></i>
+                                        <i data-feather="upload-cloud"></i>
                                         Upload de Vídeos
                                     </button>
                                     <button id="btn-upload-thumbnails" class="btn btn-warning">
                                         <i data-feather="image"></i>
                                         Upload de Thumbnails
                                     </button>
-                                    <input type="file" id="video-file-input" multiple accept="video/*" style="display: none;">
-                                    <input type="file" id="thumbnail-file-input" multiple accept="image/*" style="display: none;">
+                                    <input type="file" id="video-file-input" multiple hidden accept="video/*">
+                                    <input type="file" id="thumbnail-file-input" multiple hidden accept="image/*">
                                 </div>
                             </div>
                             <div class="table-container">
@@ -135,7 +139,7 @@
                                     <thead>
                                         <tr>
                                             <th>Nome do Arquivo</th>
-                                            <th>Duração</th>
+                                            <th>Tipo</th>
                                             <th>Status</th>
                                             <th>Ações</th>
                                         </tr>
@@ -146,25 +150,22 @@
                                 </table>
                             </div>
                         </div>
-                        <!-- Outras subpáginas aqui... -->
                     </div>
                 </div>
             </div>
 
-            <!-- Página de Configurações -->
+            <!-- PÁGINA DE CONFIGURAÇÕES -->
             <div id="configuracoes-page" class="page">
-                <header class="main-header">
-                    <h2>Configurações</h2>
-                </header>
-                <p>Configurações gerais do Autopost.</p>
+                <h2>Configurações</h2>
+                <p>Página de configurações em construção.</p>
             </div>
         </main>
     </div>
 
-    <!-- Modal de Adicionar/Editar Canal -->
+    <!-- MODAL DE CANAL -->
     <div id="channel-modal" class="modal">
         <div class="modal-content">
-            <span class="close-button" onclick="closeModal('channel-modal' )">&times;</span>
+            <span class="close-button" onclick="closeModal('channel-modal')">&times;</span>
             <h3 id="modal-title">Adicionar Novo Canal</h3>
             <form id="channel-form">
                 <input type="hidden" id="channel-id-input">
@@ -176,16 +177,16 @@
                     <label for="channel-youtube-id">ID do Canal no YouTube</label>
                     <input type="text" id="channel-youtube-id" required>
                 </div>
-                <button type="submit" class="btn btn-primary">Salvar Canal</button>
+                <button type="submit" class="btn btn-primary">Salvar</button>
             </form>
         </div>
     </div>
 
     <!-- Scripts do Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-storage-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
     
     <!-- Scripts da Aplicação -->
     <script src="https://unpkg.com/feather-icons"></script>
