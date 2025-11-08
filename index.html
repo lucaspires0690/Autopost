@@ -115,14 +115,24 @@
                 </div>
                 <div class="content-section">
                     <h2>Importar Planilha de Agendamento</h2>
-                    <p class="instrucao">Para agendar múltiplos vídeos, faça o upload de uma planilha no formato .csv contendo as informações de cada vídeo. Certifique-se de que os nomes dos arquivos de vídeo e thumbnail na planilha correspondem aos arquivos na sua biblioteca.</p>
-                    <div class="upload-area">
-                        <i data-feather="file-text" class="upload-icon"></i>
-                        <p>Arraste e solte sua planilha aqui, ou</p>
-                        <button class="btn btn-secondary">Selecione o Arquivo</button>
-                    </div>
-                    <div class="modelo-download">
-                        <a href="#" class="link-modelo">Baixar modelo da planilha (.csv)</a>
+                    <p class="instrucao">Para agendar múltiplos vídeos, siga os passos abaixo. Certifique-se de que os nomes dos arquivos na planilha correspondem exatamente aos nomes na sua Biblioteca de Mídia.</p>
+                    
+                    <div class="bulk-actions">
+                        <div class="action-step">
+                            <span class="step-number">1</span>
+                            <div>
+                                <p>Baixe nosso modelo para garantir que sua planilha esteja no formato correto.</p>
+                                <button class="btn btn-warning" onclick="downloadModelo()"><i data-feather="download"></i> Baixar Modelo (.csv)</button>
+                            </div>
+                        </div>
+                        <div class="action-step">
+                            <span class="step-number">2</span>
+                            <div>
+                                <p>Após preencher, faça o upload da sua planilha para iniciar o agendamento em massa.</p>
+                                <button class="btn btn-success" onclick="document.getElementById('csv-upload-input').click()"><i data-feather="upload"></i> Enviar Planilha Preenchida</button>
+                                <input type="file" id="csv-upload-input" accept=".csv" style="display: none;">
+                            </div>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -132,7 +142,7 @@
         </main>
     </div>
 
-    <!-- Modal (Pop-up) para Adicionar/Editar Canal -->
+    <!-- Modais (Pop-ups) -->
     <div id="channel-modal" class="modal-backdrop hidden">
         <div class="modal-content">
             <div class="modal-header">
@@ -159,7 +169,6 @@
         </div>
     </div>
 
-    <!-- Modal (Pop-up) para Agendar Vídeo -->
     <div id="schedule-modal" class="modal-backdrop hidden">
         <div class="modal-content">
             <div class="modal-header">
@@ -189,7 +198,6 @@
         </div>
     </div>
 
-    <!-- Modal (Pop-up) para Editar Metadados -->
     <div id="metadata-modal" class="modal-backdrop hidden">
         <div class="modal-content">
             <div class="modal-header">

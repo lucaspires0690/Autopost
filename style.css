@@ -11,7 +11,9 @@
     --cor-azul-primario: #3b82f6;
     --cor-azul-hover: #2563eb;
     --cor-verde: #22c55e;
+    --cor-verde-hover: #16a34a;
     --cor-amarelo: #f59e0b;
+    --cor-amarelo-hover: #d97706;
     --cor-vermelho: #ef4444;
     --cor-cinza: #64748b;
     --cor-cinza-hover: #475569;
@@ -159,6 +161,22 @@ body {
 }
 .btn-danger:hover {
     background-color: #991b1b;
+}
+
+.btn-warning {
+    background-color: var(--cor-amarelo);
+    color: white;
+}
+.btn-warning:hover {
+    background-color: var(--cor-amarelo-hover);
+}
+
+.btn-success {
+    background-color: var(--cor-verde);
+    color: white;
+}
+.btn-success:hover {
+    background-color: var(--cor-verde-hover);
 }
 
 .btn-icon {
@@ -419,44 +437,36 @@ tbody tr:hover {
     margin-bottom: 30px;
 }
 
-.upload-area {
-    border: 2px dashed var(--cor-borda);
-    border-radius: 8px;
-    padding: 40px;
-    text-align: center;
+.bulk-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.action-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+}
+
+.step-number {
+    flex-shrink: 0;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
     background-color: var(--cor-sidebar);
-    cursor: pointer;
-    transition: border-color 0.2s, background-color 0.2s;
+    border: 2px solid var(--cor-borda);
+    color: var(--cor-secundaria);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: 700;
+    font-size: 1rem;
 }
 
-.upload-area:hover {
-    border-color: var(--cor-azul-primario);
-    background-color: var(--cor-fundo);
-}
-
-.upload-icon {
-    width: 48px;
-    height: 48px;
-    color: var(--cor-cinza);
+.action-step p {
+    margin: 0;
     margin-bottom: 15px;
-}
-
-.upload-area p {
-    margin-bottom: 15px;
-    font-weight: 500;
-}
-
-.modelo-download {
-    margin-top: 20px;
-    text-align: center;
-}
-
-.link-modelo {
-    color: var(--cor-azul-primario);
-    text-decoration: none;
-    font-weight: 500;
-}
-
-.link-modelo:hover {
-    text-decoration: underline;
+    line-height: 1.5;
+    color: var(--cor-secundaria);
 }

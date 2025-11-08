@@ -92,7 +92,6 @@ function navigateTo(pageId) {
         targetLink.classList.add('active');
     }
 
-    // Atualiza os ícones para garantir que estão visíveis na nova página
     feather.replace();
 
     if (pageId === 'library') {
@@ -118,8 +117,8 @@ function simularUpload() {
     const novoId = dadosSimulados.biblioteca.length > 0 ? Math.max(...dadosSimulados.biblioteca.map(v => v.id)) + 1 : 1;
     const novoVideo = {
         id: novoId,
-        nome: `novo_video_${String(novoId).padStart(2, '0')}.mp4`,
-        duracao: `${Math.floor(Math.random() * 10 + 5)}:${String(Math.floor(Math.random() * 60)).padStart(2, '0')}`,
+        nome: `novo_video_${novoId}.mp4`,
+        duracao: `${Math.floor(Math.random() * 10 + 5)}:${Math.floor(Math.random() * 60).toString().padStart(2, '0')}`,
         status: "Na Biblioteca",
         titulo: "",
         descricao: "",
@@ -128,7 +127,7 @@ function simularUpload() {
     dadosSimulados.biblioteca.push(novoVideo);
     renderizarTabelaBiblioteca();
     renderizarDashboard();
-    alert(`Simulação: "${novoVideo.nome}" foi adicionado à biblioteca!`);
+    alert("Novo vídeo simulado adicionado à biblioteca!");
 }
 
 function removerVideo(id) {
@@ -149,54 +148,25 @@ function closeModal(modalId) {
 }
 
 // Modal de Canais
-const channelModal = document.getElementById('channel-modal');
-const channelForm = document.getElementById('channel-form');
-const channelModalTitle = document.getElementById('channel-modal-title');
-const channelEditId = document.getElementById('channel-edit-id');
-
 function openChannelModalForNew() {
-    channelForm.reset();
-    channelModalTitle.textContent = "Adicionar Novo Canal";
-    channelEditId.value = "";
-    channelModal.classList.remove('hidden');
+    document.getElementById('channel-modal-title').textContent = 'Adicionar Novo Canal';
+    document.getElementById('channel-form').reset();
+    document.getElementById('channel-edit-id').value = '';
+    document.getElementById('channel-modal').classList.remove('hidden');
 }
 
 function openChannelModalForEdit(id) {
-    const canalParaEditar = dadosSimulados.canais.find(canal => canal.id === id);
-    if (canalParaEditar) {
-        channelModalTitle.textContent = "Editar Canal";
-        channelEditId.value = id;
-        document.getElementById('channel-name').value = canalParaEditar.nome;
-        document.getElementById('channel-id').value = canalParaEditar.youtubeId;
-        channelModal.classList.remove('hidden');
-    }
+    const canal = dadosSimulados.canais.find(c => c.id === id);
+    if (!canal) return;
+
+    document.getElementById('channel-modal-title').textContent = 'Editar Canal';
+    document.getElementById('channel-edit-id').value = canal.id;
+    document.getElementById('channel-name').value = canal.nome;
+    document.getElementById('channel-id').value = canal.youtubeId;
+    document.getElementById('channel-modal').classList.remove('hidden');
 }
 
-channelForm.addEventListener('submit', (event) => {
-    event.preventDefault();
-    const nome = document.getElementById('channel-name').value;
-    const youtubeId = document.getElementById('channel-id').value;
-    const idParaEditar = parseInt(channelEditId.value);
-
-    if (idParaEditar) {
-        const index = dadosSimulados.canais.findIndex(c => c.id === idParaEditar);
-        if (index !== -1) {
-            dadosSimulados.canais[index].nome = nome;
-            dadosSimulados.canais[index].youtubeId = youtubeId;
-        }
-    } else {
-        const novoId = dadosSimulados.canais.length > 0 ? Math.max(...dadosSimulados.canais.map(c => c.id)) + 1 : 1;
-        const newChannel = { id: novoId, nome, youtubeId, horario: "N/A", status: "Ativo" };
-        dadosSimulados.canais.push(newChannel);
-    }
-    renderizarDashboard();
-    closeModal('channel-modal');
-});
-
 // Modal de Agendamento
-const scheduleModal = document.getElementById('schedule-modal');
-const scheduleForm = document.getElementById('schedule-form');
-
 function openScheduleModal(videoId) {
     const video = dadosSimulados.biblioteca.find(v => v.id === videoId);
     if (!video) return;
@@ -206,78 +176,107 @@ function openScheduleModal(videoId) {
 
     const channelSelect = document.getElementById('schedule-channel');
     channelSelect.innerHTML = '<option value="">Selecione um canal...</option>';
-    dadosSimulados.canais
-        .filter(c => c.status === 'Ativo')
-        .forEach(canal => {
-            const option = `<option value="${canal.id}">${canal.nome}</option>`;
-            channelSelect.innerHTML += option;
-        });
-    
-    scheduleModal.classList.remove('hidden');
+    dadosSimulados.canais.filter(c => c.status === 'Ativo').forEach(canal => {
+        const option = document.createElement('option');
+        option.value = canal.id;
+        option.textContent = canal.nome;
+        channelSelect.appendChild(option);
+    });
+
+    document.getElementById('schedule-modal').classList.remove('hidden');
 }
 
-scheduleForm.addEventListener('submit', (event) => {
-    event.preventDefault();
-    const videoId = parseInt(document.getElementById('schedule-video-id').value);
-    const channelId = document.getElementById('schedule-channel').value;
-    const datetime = document.getElementById('schedule-datetime').value;
-
-    if (!channelId || !datetime) {
-        alert("Por favor, selecione um canal e uma data/hora.");
-        return;
-    }
-
-    const videoIndex = dadosSimulados.biblioteca.findIndex(v => v.id === videoId);
-    if (videoIndex !== -1) {
-        dadosSimulados.biblioteca[videoIndex].status = "Agendado";
-        console.log(`Vídeo ID ${videoId} agendado para o canal ID ${channelId} em ${datetime}`);
-    }
-
-    renderizarTabelaBiblioteca();
-    closeModal('schedule-modal');
-});
-
 // Modal de Metadados
-const metadataModal = document.getElementById('metadata-modal');
-const metadataForm = document.getElementById('metadata-form');
-
 function openMetadataModal(videoId) {
     const video = dadosSimulados.biblioteca.find(v => v.id === videoId);
     if (!video) return;
 
     document.getElementById('metadata-video-name').textContent = video.nome;
     document.getElementById('metadata-video-id').value = video.id;
-    document.getElementById('metadata-title').value = video.titulo || '';
-    document.getElementById('metadata-description').value = video.descricao || '';
-    document.getElementById('metadata-tags').value = video.tags || '';
+    document.getElementById('metadata-title').value = video.titulo;
+    document.getElementById('metadata-description').value = video.descricao;
+    document.getElementById('metadata-tags').value = video.tags;
 
-    metadataModal.classList.remove('hidden');
+    document.getElementById('metadata-modal').classList.remove('hidden');
 }
 
-metadataForm.addEventListener('submit', (event) => {
-    event.preventDefault();
-    const videoId = parseInt(document.getElementById('metadata-video-id').value);
-    const titulo = document.getElementById('metadata-title').value;
-    const descricao = document.getElementById('metadata-description').value;
-    const tags = document.getElementById('metadata-tags').value;
+// --- Funções de Agendamento em Massa ---
 
-    const videoIndex = dadosSimulados.biblioteca.findIndex(v => v.id === videoId);
-    if (videoIndex !== -1) {
-        dadosSimulados.biblioteca[videoIndex].titulo = titulo;
-        dadosSimulados.biblioteca[videoIndex].descricao = descricao;
-        dadosSimulados.biblioteca[videoIndex].tags = tags;
-        alert('Metadados salvos com sucesso!');
-    }
+function downloadModelo() {
+    const cabecalho = "nome_do_arquivo,titulo_do_video,descricao,tags,nome_do_canal,data_hora_postagem (YYYY-MM-DD HH:MM)";
+    const exemplo = "video_final_01.mp4,Meu Primeiro Vídeo,Esta é a descrição do meu primeiro vídeo.,tag1,tag2,Canal Principal,2025-12-25 10:00";
+    const conteudoCsv = cabecalho + "\n" + exemplo;
+    
+    const blob = new Blob([conteudoCsv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", "modelo_autopost.csv");
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    alert("O download do modelo da planilha foi iniciado.");
+}
 
-    closeModal('metadata-modal');
-});
+// --- Event Listeners para Formulários ---
 
+document.addEventListener('DOMContentLoaded', () => {
+    // Formulário de Canal
+    document.getElementById('channel-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const id = document.getElementById('channel-edit-id').value;
+        const nome = document.getElementById('channel-name').value;
+        const youtubeId = document.getElementById('channel-id').value;
 
-// Evento para fechar modais clicando no fundo
-document.querySelectorAll('.modal-backdrop').forEach(modal => {
-    modal.addEventListener('click', (event) => {
-        if (event.target === modal) {
-            closeModal(modal.id);
+        if (id) { // Editando
+            const canal = dadosSimulados.canais.find(c => c.id == id);
+            if (canal) {
+                canal.nome = nome;
+                canal.youtubeId = youtubeId;
+            }
+        } else { // Criando
+            const novoId = dadosSimulados.canais.length > 0 ? Math.max(...dadosSimulados.canais.map(c => c.id)) + 1 : 1;
+            dadosSimulados.canais.push({ id: novoId, nome, youtubeId, horario: "N/A", status: "Ativo" });
+        }
+        renderizarDashboard();
+        closeModal('channel-modal');
+    });
+
+    // Formulário de Agendamento
+    document.getElementById('schedule-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const videoId = document.getElementById('schedule-video-id').value;
+        const video = dadosSimulados.biblioteca.find(v => v.id == videoId);
+        if (video) {
+            video.status = 'Agendado';
+            renderizarTabelaBiblioteca();
+            alert(`Vídeo "${video.nome}" agendado com sucesso!`);
+        }
+        closeModal('schedule-modal');
+    });
+
+    // Formulário de Metadados
+    document.getElementById('metadata-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const videoId = document.getElementById('metadata-video-id').value;
+        const video = dadosSimulados.biblioteca.find(v => v.id == videoId);
+        if (video) {
+            video.titulo = document.getElementById('metadata-title').value;
+            video.descricao = document.getElementById('metadata-description').value;
+            video.tags = document.getElementById('metadata-tags').value;
+            alert(`Metadados do vídeo "${video.nome}" salvos com sucesso!`);
+        }
+        closeModal('metadata-modal');
+    });
+
+    // Listener para o input de upload de CSV
+    document.getElementById('csv-upload-input').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            alert(`Arquivo "${file.name}" selecionado. A lógica para processar o arquivo será implementada no próximo passo.`);
+            // Futuramente, aqui chamaremos a função para ler e processar o CSV.
+            e.target.value = ''; // Limpa o input para permitir selecionar o mesmo arquivo novamente
         }
     });
 });
