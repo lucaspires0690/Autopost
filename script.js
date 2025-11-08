@@ -109,42 +109,33 @@ async function renderizarDashboard() {
     }
 }
 
-// ***** NOVA FUNÇÃO *****
+// ***** FUNÇÃO CORRIGIDA E SIMPLIFICADA *****
 async function renderizarBiblioteca(canalId) {
     const videosTableBody = document.getElementById('videos-table').querySelector('tbody');
     videosTableBody.innerHTML = '<tr><td colspan="4">Carregando mídia...</td></tr>';
 
     try {
-        const storageRef = storage.ref(`canais/${canalId}`);
-        const res = await storageRef.listAll();
-        
+        // Referências diretas para as pastas de vídeos e thumbnails
+        const videosRef = storage.ref(`canais/${canalId}/videos`);
+        const thumbnailsRef = storage.ref(`canais/${canalId}/thumbnails`);
+
+        // Pede a lista de arquivos de cada pasta em paralelo
+        const [videosRes, thumbnailsRes] = await Promise.all([
+            videosRef.listAll(),
+            thumbnailsRef.listAll()
+        ]);
+
         const allFiles = [];
-        // Pega os vídeos
-        res.items.forEach(itemRef => {
-            if (itemRef.parent.name === 'videos' || itemRef.parent.name === 'thumbnails') {
-                 allFiles.push({
-                    nome: itemRef.name,
-                    tipo: itemRef.parent.name === 'videos' ? 'Vídeo' : 'Thumbnail',
-                    ref: itemRef
-                });
-            }
-        });
-         // O listAll() não é recursivo, então precisamos listar as subpastas
-        const videoPromises = res.prefixes.filter(p => p.name === 'videos').map(folderRef => folderRef.listAll());
-        const thumbPromises = res.prefixes.filter(p => p.name === 'thumbnails').map(folderRef => folderRef.listAll());
 
-        const folderResults = await Promise.all([...videoPromises, ...thumbPromises]);
-
-        folderResults.forEach(folderRes => {
-            folderRes.items.forEach(itemRef => {
-                 allFiles.push({
-                    nome: itemRef.name,
-                    tipo: itemRef.parent.name === 'videos' ? 'Vídeo' : 'Thumbnail',
-                    ref: itemRef
-                });
-            });
+        // Adiciona os vídeos na lista
+        videosRes.items.forEach(itemRef => {
+            allFiles.push({ nome: itemRef.name, tipo: 'Vídeo' });
         });
 
+        // Adiciona as thumbnails na lista
+        thumbnailsRes.items.forEach(itemRef => {
+            allFiles.push({ nome: itemRef.name, tipo: 'Thumbnail' });
+        });
 
         if (allFiles.length === 0) {
             videosTableBody.innerHTML = '<tr><td colspan="4">Nenhuma mídia encontrada. Faça o upload de vídeos e thumbnails.</td></tr>';
@@ -168,7 +159,7 @@ async function renderizarBiblioteca(canalId) {
 
     } catch (error) {
         console.error("Erro ao listar arquivos da biblioteca:", error);
-        videosTableBody.innerHTML = '<tr><td colspan="4">Erro ao carregar mídia.</td></tr>';
+        videosTableBody.innerHTML = '<tr><td colspan="4">Erro ao carregar mídia. Verifique o console (F12).</td></tr>';
     }
 }
 
@@ -185,14 +176,12 @@ function navigateTo(pageId) {
     });
 }
 
-// ***** FUNÇÃO MODIFICADA *****
 function gerenciarCanal(docId) {
     canalAtual = canaisCache.find(c => c.docId === docId);
     if (!canalAtual) return;
     document.getElementById('channel-management-title').textContent = `Gerenciamento: ${canalAtual.nome}`;
     navigateTo('channel-management');
     
-    // Chama a nova função para carregar a biblioteca
     renderizarBiblioteca(canalAtual.docId); 
 }
 
@@ -276,7 +265,6 @@ function uploadFiles(fileList, tipo) {
             },
             function complete() {
                 console.log(`Upload de ${file.name} concluído com sucesso!`);
-                // Após o upload, atualiza a biblioteca para mostrar o novo arquivo
                 renderizarBiblioteca(canalAtual.docId);
             }
         );
