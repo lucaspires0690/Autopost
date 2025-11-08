@@ -36,8 +36,10 @@ let gisInited = false;
 // LÓGICA DE AUTENTICAÇÃO (GOOGLE E FIREBASE)
 // ===================================================================
 
-// Chamado pelo <script> no HTML quando a biblioteca GAPI (cliente de API) está pronta.
-function gapiLoaded() {
+// CORREÇÃO: Anexando as funções de callback ao objeto 'window' para torná-las globais.
+// Isso permite que os scripts do Google as encontrem, mesmo com nosso script no final do <body>.
+
+window.gapiLoaded = function() {
     gapi.load('client', () => {
         gapi.client.init({
             apiKey: GOOGLE_API_KEY,
@@ -46,27 +48,35 @@ function gapiLoaded() {
             gapiInited = true;
             console.log("GAPI client inicializado.");
             maybeEnableAuthButton();
+        }).catch(err => {
+            console.error("Erro ao inicializar GAPI client:", err);
         });
     });
 }
 
-// Chamado pelo <script> no HTML quando a biblioteca GIS (autenticação) está pronta.
-function gisLoaded() {
-    tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: GOOGLE_CLIENT_ID,
-        scope: YOUTUBE_SCOPES,
-        callback: async (tokenResponse) => {
-            if (tokenResponse && tokenResponse.access_token) {
-                console.log("Token de acesso recebido. Buscando dados do canal...");
-                document.getElementById('btn-connect-youtube').textContent = 'Processando...';
-                document.getElementById('btn-connect-youtube').disabled = true;
-                await buscarEAdicionarCanal(tokenResponse);
-            }
-        },
-    });
-    gisInited = true;
-    console.log("GIS client (Token Client) inicializado.");
-    maybeEnableAuthButton();
+window.gisLoaded = function() {
+    try {
+        tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: GOOGLE_CLIENT_ID,
+            scope: YOUTUBE_SCOPES,
+            callback: async (tokenResponse) => {
+                if (tokenResponse && tokenResponse.access_token) {
+                    console.log("Token de acesso recebido. Buscando dados do canal...");
+                    const connectButton = document.getElementById('btn-connect-youtube');
+                    if(connectButton) {
+                        connectButton.textContent = 'Processando...';
+                        connectButton.disabled = true;
+                    }
+                    await buscarEAdicionarCanal(tokenResponse);
+                }
+            },
+        });
+        gisInited = true;
+        console.log("GIS client (Token Client) inicializado.");
+        maybeEnableAuthButton();
+    } catch (err) {
+        console.error("Erro ao inicializar GIS client (Token Client):", err);
+    }
 }
 
 // Habilita o botão de conexão somente se AMBAS as bibliotecas do Google estiverem prontas.
@@ -114,13 +124,21 @@ async function fazerLogin(email, password) {
 async function fazerLogout() {
     try {
         await auth.signOut();
-        if (gapi.client.getToken()) {
-            google.accounts.oauth2.revoke(gapi.client.getToken().access_token, () => {
-                console.log('Token do Google revogado.');
-            });
+        // Limpa o token do GAPI para forçar novo login do Google na próxima vez
+        if (typeof gapi !== 'undefined' && gapi.client && gapi.client.getToken()) {
+            const token = gapi.client.getToken();
+            if (token && typeof google !== 'undefined') {
+                google.accounts.oauth2.revoke(token.access_token, () => {
+                    console.log('Token do Google revogado.');
+                    gapi.client.setToken(null);
+                });
+            }
         }
     } catch (error) {
         console.error("Erro ao fazer logout:", error);
+    } finally {
+        // Garante que a página seja recarregada para um estado limpo
+        window.location.reload();
     }
 }
 
@@ -176,7 +194,6 @@ async function renderizarDashboard() {
     const channelsTableBody = document.getElementById('channels-table').querySelector('tbody');
     channelsTableBody.innerHTML = '<tr><td colspan="5">Carregando canais...</td></tr>';
     try {
-        // Ordenando por youtubeId para consistência, já que o 'id' numérico foi removido
         const snapshot = await db.collection('canais').orderBy('youtubeId').get();
         canaisCache = snapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
         if (canaisCache.length === 0) {
@@ -197,6 +214,7 @@ async function renderizarDashboard() {
                     <button class="btn-icon-table remove-icon" title="Remover" onclick="removerCanal('${canal.docId}')"><i data-feather="trash-2"></i></button>
                 </td>
             `;
+            channelsTableBody.appendChild(tr);
         });
         feather.replace();
     } catch (error) {
@@ -548,6 +566,7 @@ function openEditScheduleModal(docId) {
     openModal('schedule-modal');
 }
 
+// O código principal agora está dentro do DOMContentLoaded para garantir que o HTML existe.
 document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('login-form');
     if (loginForm) {

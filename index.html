@@ -9,13 +9,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 
-    <!-- CORREÇÃO FINAL: Nosso script primeiro, sem 'defer' ou 'async' -->
-    <!-- Isso garante que as funções existem ANTES de serem chamadas. -->
-    <script src="script.js"></script>
-
-    <!-- Scripts do Google que chamarão as funções no nosso script.js -->
-    <script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded( )"></script>
-    <script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded( )"></script>
+    <!-- Scripts do Google que chamarão as funções de callback -->
+    <!-- O 'onload' vai procurar as funções no escopo global (window ) -->
+    <script async defer src="https://apis.google.com/js/api.js?onload=gapiLoaded"></script>
+    <script async defer src="https://accounts.google.com/gsi/client?onload=gisLoaded"></script>
 </head>
 <body>
 
@@ -136,7 +133,7 @@
                                 <p>Faça o upload de um arquivo .CSV com os dados dos vídeos a serem publicados. Baixe o modelo para garantir o formato correto.</p>
                                 <div class="import-buttons">
                                     <button id="btn-download-csv-template" class="btn btn-secondary"><i data-feather="download"></i> Baixar Modelo</button>
-                                    <button id="btn-import-csv" class="btn btn-primary"><i data-feather="upload"></i> Importar Planilha (CSV)</button>
+                                    <button id="btn-import-csv" class="btn btn-primary"><i data-feather="upload"></i> Importar Planilha (CSV )</button>
                                     <input type="file" id="csv-file-input" hidden accept=".csv">
                                 </div>
                                 <div id="csv-status" class="log-box">Aguardando importação...</div>
@@ -235,5 +232,8 @@
     <script src="https://unpkg.com/papaparse@5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/feather-icons"></script>
     
+    <!-- Nosso script principal no final do body, onde é seguro -->
+    <script src="script.js"></script>
+
 </body>
 </html>
