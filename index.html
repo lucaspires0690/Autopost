@@ -10,67 +10,34 @@
 </head>
 <body>
     <div class="container">
-        <!-- Menu Lateral -->
+        <!-- Menu Lateral Principal -->
         <nav class="sidebar">
             <div class="sidebar-header">
                 <i data-feather="youtube" class="logo-icon"></i>
                 <span class="logo-text">Autopost</span>
             </div>
             <ul class="nav-menu">
-                <li><a href="#" class="nav-link active" onclick="navigateTo('dashboard' )"><i data-feather="home"></i><span>Dashboard</span></a></li>
-                <li><a href="#" class="nav-link" onclick="navigateTo('library')"><i data-feather="film"></i><span>Biblioteca</span></a></li>
-                <li><a href="#" class="nav-link" onclick="navigateTo('bulk-schedule')"><i data-feather="upload"></i><span>Agend. em Massa</span></a></li>
-                <li><a href="#" class="nav-link" onclick="navigateTo('calendar')"><i data-feather="calendar"></i><span>Calendário</span></a></li>
+                <li><a href="#" class="nav-link active" onclick="navigateTo('dashboard' )"><i data-feather="grid"></i><span>Dashboard</span></a></li>
                 <li><a href="#" class="nav-link" onclick="navigateTo('settings')"><i data-feather="settings"></i><span>Configurações</span></a></li>
             </ul>
         </nav>
 
         <!-- Conteúdo Principal -->
         <main class="main-content">
-            <!-- Seção do Dashboard -->
+            <!-- Seção do Dashboard (Portal de Canais) -->
             <section id="dashboard" class="page active">
                 <div class="main-header">
-                    <h1>Dashboard</h1>
+                    <h1>Meus Canais</h1>
                     <button class="btn btn-primary" onclick="openChannelModalForNew()"><i data-feather="plus-circle"></i> Adicionar Novo Canal</button>
                 </div>
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-icon" style="background-color: #2980b9;"><i data-feather="tv"></i></div>
-                        <div class="stat-info">
-                            <span class="stat-title">Canais Ativos</span>
-                            <span class="stat-value" id="stat-canais-ativos">0</span>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon" style="background-color: #27ae60;"><i data-feather="film"></i></div>
-                        <div class="stat-info">
-                            <span class="stat-title">Vídeos na Biblioteca</span>
-                            <span class="stat-value" id="stat-videos-biblioteca">0</span>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon" style="background-color: #f39c12;"><i data-feather="clock"></i></div>
-                        <div class="stat-info">
-                            <span class="stat-title">Agendados para Hoje</span>
-                            <span class="stat-value" id="stat-agendados-hoje">0</span>
-                        </div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-icon" style="background-color: #c0392b;"><i data-feather="alert-triangle"></i></div>
-                        <div class="stat-info">
-                            <span class="stat-title">Falhas de Upload</span>
-                            <span class="stat-value" id="stat-falhas-upload">0</span>
-                        </div>
-                    </div>
-                </div>
                 <div class="content-section">
-                    <h2>Visão Geral dos Canais</h2>
                     <div class="table-container">
                         <table id="canais-table-dashboard">
                             <thead>
                                 <tr>
+                                    <th>ID</th>
                                     <th>Nome do Canal</th>
-                                    <th>Próxima Postagem</th>
+                                    <th>Data de Criação</th>
                                     <th>Status</th>
                                     <th>Ações</th>
                                 </tr>
@@ -83,98 +50,113 @@
                 </div>
             </section>
 
-            <!-- Seção da Biblioteca -->
-            <section id="library" class="page">
-                <div class="main-header">
-                    <h1 id="library-title">Biblioteca de Mídia</h1>
-                    <button id="library-upload-btn" class="btn btn-primary hidden" onclick="simularUpload()"><i data-feather="upload-cloud"></i> Fazer Upload de Vídeos</button>
+            <!-- NOVA PÁGINA: Gerenciamento de Canal -->
+            <section id="channel-management-page" class="page">
+                <div class="channel-main-header">
+                    <button class="btn btn-secondary btn-back" onclick="navigateTo('dashboard')"><i data-feather="arrow-left"></i> Voltar ao Dashboard</button>
+                    <h1 id="channel-management-title"></h1>
                 </div>
-                
-                <!-- Nova Seção: Lista de Canais -->
-                <div id="library-channel-list" class="content-section">
-                    <h2>Selecione um Canal</h2>
-                    <div class="channel-grid">
-                        <!-- Cards dos canais serão inseridos aqui -->
-                    </div>
-                </div>
+                <div class="channel-management-container">
+                    <!-- Menu Interno do Canal -->
+                    <aside class="channel-sidebar">
+                        <ul class="channel-nav-menu">
+                            <li><a href="#" class="channel-nav-link active" onclick="navigateToChannelSection('channel-library')"><i data-feather="film"></i><span>Biblioteca</span></a></li>
+                            <li><a href="#" class="channel-nav-link" onclick="navigateToChannelSection('channel-bulk-schedule')"><i data-feather="upload"></i><span>Agend. em Massa</span></a></li>
+                            <li><a href="#" class="channel-nav-link" onclick="navigateToChannelSection('channel-settings')"><i data-feather="sliders"></i><span>Config. do Canal</span></a></li>
+                        </ul>
+                    </aside>
+                    <!-- Conteúdo Interno do Canal -->
+                    <div class="channel-content">
+                        <!-- Seção Biblioteca do Canal -->
+                        <section id="channel-library" class="channel-page active">
+                            <div class="main-header">
+                                <h2>Biblioteca de Mídia</h2>
+                                <button class="btn btn-primary" onclick="simularUpload()"><i data-feather="upload-cloud"></i> Fazer Upload de Vídeos</button>
+                            </div>
+                            <div class="table-container">
+                                <table id="library-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Nome do Arquivo</th>
+                                            <th>Duração</th>
+                                            <th>Status</th>
+                                            <th>Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </section>
 
-                <!-- Seção da Tabela de Vídeos (inicialmente oculta) -->
-                <div id="library-video-list" class="content-section hidden">
-                    <button class="btn btn-secondary btn-back" onclick="showChannelList()"><i data-feather="arrow-left"></i> Voltar para Canais</button>
-                    <h2 id="library-video-list-title">Backlog de Vídeos</h2>
-                    <div class="table-container">
-                        <table id="library-table">
-                            <thead>
-                                <tr>
-                                    <th>Nome do Arquivo</th>
-                                    <th>Duração</th>
-                                    <th>Status</th>
-                                    <th>Ações</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Linhas de vídeos serão inseridas aqui -->
-                            </tbody>
-                        </table>
+                        <!-- Seção Agend. em Massa do Canal -->
+                        <section id="channel-bulk-schedule" class="channel-page">
+                            <div class="main-header">
+                                <h2>Agendamento em Massa</h2>
+                            </div>
+                            <div class="content-section" style="background-color: var(--cor-fundo);">
+                                <p class="instrucao">Para agendar múltiplos vídeos para este canal, siga os passos abaixo.</p>
+                                <div class="bulk-actions">
+                                    <div class="action-step">
+                                        <span class="step-number">1</span>
+                                        <div>
+                                            <p>Exporte uma planilha com todos os vídeos deste canal prontos para agendar.</p>
+                                            <button class="btn btn-warning" onclick="exportarPlanilhaParaAgendar()"><i data-feather="download"></i> Exportar para Planilha</button>
+                                        </div>
+                                    </div>
+                                    <div class="action-step">
+                                        <span class="step-number">2</span>
+                                        <div>
+                                            <p>Após preencher, envie a planilha para iniciar o agendamento em massa.</p>
+                                            <button class="btn btn-success" onclick="document.getElementById('csv-upload-input').click()"><i data-feather="upload"></i> Upload de Planilha</button>
+                                            <input type="file" id="csv-upload-input" accept=".csv" style="display: none;">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div id="bulk-results-section" class="content-section hidden" style="background-color: var(--cor-fundo);">
+                                <h2>Pré-visualização do Agendamento</h2>
+                                <div class="table-container">
+                                    <table id="bulk-preview-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Arquivo</th>
+                                                <th>Data</th>
+                                                <th>Status</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
+                                <div class="bulk-confirm-footer">
+                                    <button class="btn btn-primary" onclick="confirmarAgendamentoEmMassa()"><i data-feather="check-circle"></i> Confirmar e Agendar</button>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Seção Config. do Canal -->
+                        <section id="channel-settings" class="channel-page">
+                             <div class="main-header">
+                                <h2>Configurações do Canal</h2>
+                            </div>
+                            <div class="content-section" style="background-color: var(--cor-fundo);">
+                                <p>Em breve: aqui você poderá ajustar configurações específicas para este canal.</p>
+                            </div>
+                        </section>
                     </div>
                 </div>
             </section>
 
-            <!-- Seção de Agendamento em Massa -->
-            <section id="bulk-schedule" class="page">
+            <!-- Seção de Configurações Gerais -->
+            <section id="settings" class="page">
                 <div class="main-header">
-                    <h1>Agendamento em Massa</h1>
+                    <h1>Configurações Gerais</h1>
                 </div>
                 <div class="content-section">
-                    <h2>Importar Planilha de Agendamento</h2>
-                    <p class="instrucao">Para agendar múltiplos vídeos, siga os passos abaixo. Exporte a planilha, preencha os dados de agendamento e faça o upload.</p>
-                    
-                    <div class="bulk-actions">
-                        <div class="action-step">
-                            <span class="step-number">1</span>
-                            <div>
-                                <p>Exporte uma planilha com todos os vídeos prontos para agendar.</p>
-                                <button class="btn btn-warning" onclick="exportarPlanilhaParaAgendar()"><i data-feather="download"></i> Exportar para Planilha</button>
-                            </div>
-                        </div>
-                        <div class="action-step">
-                            <span class="step-number">2</span>
-                            <div>
-                                <p>Após preencher, envie a planilha para iniciar o agendamento em massa.</p>
-                                <button class="btn btn-success" onclick="document.getElementById('csv-upload-input').click()"><i data-feather="upload"></i> Upload de Planilha</button>
-                                <input type="file" id="csv-upload-input" accept=".csv" style="display: none;">
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Seção de Pré-visualização -->
-                <div id="bulk-results-section" class="content-section hidden">
-                    <h2>Pré-visualização do Agendamento</h2>
-                    <p class="instrucao">Verifique os dados importados da sua planilha. Linhas com erros estão marcadas em vermelho e não serão agendadas.</p>
-                    <div class="table-container">
-                        <table id="bulk-preview-table">
-                            <thead>
-                                <tr>
-                                    <th>Arquivo</th>
-                                    <th>Canal</th>
-                                    <th>Data</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <!-- Linhas da pré-visualização serão inseridas aqui -->
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="bulk-confirm-footer">
-                        <button class="btn btn-primary" onclick="confirmarAgendamentoEmMassa()"><i data-feather="check-circle"></i> Confirmar e Agendar</button>
-                    </div>
+                    <h2>Conexão com a API do YouTube</h2>
+                    <p class="instrucao">Em breve: aqui você irá conectar sua conta Google para permitir que o Autopost publique seus vídeos.</p>
+                    <button class="btn btn-primary" disabled>Conectar com Google</button>
                 </div>
             </section>
-
-            <section id="calendar" class="page"></section>
-            <section id="settings" class="page"></section>
         </main>
     </div>
 
@@ -215,12 +197,6 @@
                 <form id="schedule-form">
                     <input type="hidden" id="schedule-video-id">
                     <p>Você está agendando o vídeo: <strong id="schedule-video-name"></strong></p>
-                    <div class="form-group">
-                        <label for="schedule-channel">Selecione o Canal</label>
-                        <select id="schedule-channel" required>
-                            <!-- Opções de canais serão inseridas aqui -->
-                        </select>
-                    </div>
                     <div class="form-group">
                         <label for="schedule-datetime">Data e Hora da Postagem</label>
                         <input type="datetime-local" id="schedule-datetime" required>
