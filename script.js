@@ -388,6 +388,7 @@ function baixarModeloCSV() {
 
 async function editarAgendamento(docId, dados) {
     try {
+        // CORREÇÃO APLICADA AQUI: Usando os nomes corretos das variáveis (camelCase)
         const dataHora = new Date(`${dados.dataPublicacao}T${dados.horaPublicacao}`);
         
         const dadosParaSalvar = {
