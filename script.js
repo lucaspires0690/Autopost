@@ -21,7 +21,7 @@ const storage = firebase.storage();
 // CONFIGURAÇÃO DA API DO GOOGLE (YOUTUBE)
 // ===================================================================
 
-const GOOGLE_API_KEY = "AIzaSyDrKMIudQUfLS0j4tG-kEdkVksvSnZaIPQ"; // Reutilizando a chave de API do Firebase
+const GOOGLE_API_KEY = "AIzaSyDrKMIudQUfLS0j4tG-kEdkVksvSnZaIPQ";
 const GOOGLE_CLIENT_ID = "191333777971-7vjn3tn7t09tfhtf6mf0funjgibep2tf.apps.googleusercontent.com";
 const YOUTUBE_SCOPES = 'https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly';
 
@@ -47,7 +47,7 @@ auth.onAuthStateChanged(user => {
         mainContainer.style.display = 'flex';
         feather.replace();
         renderizarDashboard();
-        googleApiClientInit(); // Inicializa o cliente da API do Google
+        googleApiClientInit();
     } else {
         loginPage.style.display = 'block';
         mainContainer.style.display = 'none';
@@ -89,30 +89,44 @@ function googleApiClientInit() {
             discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest'],
         } );
         console.log("Cliente da API do Google (gapi) inicializado.");
-        googleTokenClientInit(); // Prepara o cliente de token logo em seguida
+        googleTokenClientInit();
     });
 }
 
 function googleTokenClientInit() {
     if (!auth.currentUser) return;
-    tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: GOOGLE_CLIENT_ID,
-        scope: YOUTUBE_SCOPES,
-        callback: async (tokenResponse) => {
-            if (tokenResponse && tokenResponse.access_token) {
-                console.log("Token de acesso recebido. Buscando dados do canal...");
-                await buscarEAdicionarCanal(tokenResponse);
-            }
-        },
-    });
-    console.log("Cliente de Token do Google (OAuth2) inicializado.");
+    try {
+        tokenClient = google.accounts.oauth2.initTokenClient({
+            client_id: GOOGLE_CLIENT_ID,
+            scope: YOUTUBE_SCOPES,
+            callback: async (tokenResponse) => {
+                if (tokenResponse && tokenResponse.access_token) {
+                    console.log("Token de acesso recebido. Buscando dados do canal...");
+                    document.getElementById('btn-connect-youtube').textContent = 'Processando...';
+                    document.getElementById('btn-connect-youtube').disabled = true;
+                    await buscarEAdicionarCanal(tokenResponse);
+                }
+            },
+        });
+        console.log("Cliente de Token do Google (OAuth2) inicializado com SUCESSO.");
+        // CORREÇÃO: Habilita o botão APENAS quando o tokenClient estiver pronto.
+        const connectButton = document.getElementById('btn-connect-youtube');
+        if (connectButton) {
+            connectButton.disabled = false;
+            connectButton.innerHTML = '<i data-feather="youtube"></i> Conectar com o YouTube';
+            feather.replace();
+        }
+    } catch (error) {
+        console.error("Falha ao inicializar o Google Token Client:", error);
+        alert("Não foi possível carregar a integração com o Google. Verifique sua conexão e recarregue a página.");
+    }
 }
 
 function solicitarAcessoYouTube() {
     if (tokenClient) {
         tokenClient.requestAccessToken();
     } else {
-        console.error("Cliente de token do Google não inicializado.");
+        console.error("Cliente de token do Google não inicializado ao tentar solicitar acesso.");
         alert("Ocorreu um erro ao iniciar a conexão com o Google. Tente recarregar a página.");
     }
 }
@@ -139,7 +153,6 @@ async function buscarEAdicionarCanal(tokenResponse) {
                 return;
             }
             
-            // A função adicionarCanal agora lida com o token
             await adicionarCanal(nomeCanal, youtubeId, tokenResponse);
             
         } else {
@@ -531,7 +544,15 @@ function openModal(modalId) { document.getElementById(modalId).style.display = '
 function closeModal(modalId) { document.getElementById(modalId).style.display = 'none'; }
 
 function openAddChannelModal() {
+    // CORREÇÃO: Desabilita o botão e mostra 'Carregando...' até a API do Google estar pronta.
+    const connectButton = document.getElementById('btn-connect-youtube');
+    if (connectButton) {
+        connectButton.disabled = true;
+        connectButton.textContent = 'Carregando...';
+    }
     openModal('channel-modal');
+    // A função googleTokenClientInit() irá reabilitar o botão quando estiver pronta.
+    googleTokenClientInit();
 }
 
 function openEditScheduleModal(docId) {
