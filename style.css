@@ -365,7 +365,6 @@ textarea {
 .upload-buttons {
     display: flex;
     gap: 1rem;
-    margin-top: 1rem;
 }
 
 /* Seção de Pré-visualização */
@@ -383,3 +382,16 @@ textarea {
 }
 #preview-section .status.valido { color: var(--cor-verde); }
 #preview-section .status.invalido { color: var(--cor-vermelho); }
+
+/* Estilos para o cabeçalho da subpágina */
+.subpage-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.subpage-header h3 {
+    font-size: 1.5rem;
+    font-weight: 600;
+}

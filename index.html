@@ -83,7 +83,21 @@
                     <div class="channel-content">
                         <!-- Subpágina da Biblioteca -->
                         <div id="biblioteca-subpage" class="channel-page active">
-                            <h3>Biblioteca de Mídia</h3>
+                            <div class="subpage-header">
+                                <h3>Biblioteca de Mídia</h3>
+                                <div class="upload-buttons">
+                                    <button id="btn-upload-videos" class="btn btn-success">
+                                        <i data-feather="video"></i>
+                                        Upload de Vídeos
+                                    </button>
+                                    <button id="btn-upload-thumbnails" class="btn btn-warning">
+                                        <i data-feather="image"></i>
+                                        Upload de Thumbnails
+                                    </button>
+                                    <input type="file" id="video-file-input" multiple accept="video/*" style="display: none;">
+                                    <input type="file" id="thumbnail-file-input" multiple accept="image/*" style="display: none;">
+                                </div>
+                            </div>
                             <div class="table-container">
                                 <table id="videos-table">
                                     <thead>
@@ -106,7 +120,7 @@
                             <div class="upload-section">
                                 <p>Faça o upload de uma planilha (.csv ) para agendar múltiplos vídeos de uma vez.</p>
                                 <div class="upload-buttons">
-                                    <button id="btn-download-template" class="btn btn-warning">
+                                    <button id="btn-download-template" class="btn btn-secondary">
                                         <i data-feather="download"></i>
                                         Exportar para Planilha
                                     </button>
@@ -177,57 +191,10 @@
         </div>
     </div>
 
-    <!-- Modal de Agendamento -->
-    <div id="schedule-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-button" onclick="closeModal('schedule-modal')">&times;</span>
-            <h3>Agendar Vídeo</h3>
-            <p><strong>Vídeo:</strong> <span id="schedule-video-name"></span></p>
-            <form id="schedule-form">
-                <input type="hidden" id="schedule-video-id">
-                <div class="form-group">
-                    <label for="schedule-channel">Selecione o Canal</label>
-                    <select id="schedule-channel" required>
-                        <!-- Opções de canais -->
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="schedule-datetime">Data e Hora da Postagem</label>
-                    <input type="datetime-local" id="schedule-datetime" required>
-                </div>
-                <button type="submit" class="btn btn-primary">Salvar Agendamento</button>
-            </form>
-        </div>
-    </div>
-
-    <!-- Modal de Metadados -->
-    <div id="metadata-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-button" onclick="closeModal('metadata-modal')">&times;</span>
-            <h3>Editar Metadados do Vídeo</h3>
-            <p><strong>Vídeo:</strong> <span id="metadata-video-name"></span></p>
-            <form id="metadata-form">
-                <input type="hidden" id="metadata-video-id">
-                <div class="form-group">
-                    <label for="metadata-title">Título</label>
-                    <input type="text" id="metadata-title">
-                </div>
-                <div class="form-group">
-                    <label for="metadata-description">Descrição</label>
-                    <textarea id="metadata-description" rows="4"></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="metadata-tags">Tags (separadas por vírgula)</label>
-                    <input type="text" id="metadata-tags">
-                </div>
-                <button type="submit" class="btn btn-primary">Salvar Metadados</button>
-            </form>
-        </div>
-    </div>
-
     <!-- Scripts do Firebase -->
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.7/firebase-storage-compat.js"></script>
     
     <!-- Scripts da Aplicação -->
     <script src="https://unpkg.com/feather-icons"></script>
