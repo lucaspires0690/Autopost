@@ -2,12 +2,12 @@
 // CONFIGURAÇÕES E INICIALIZAÇÃO
 // ===================================================================
 
+// Configuração EXATA do Firebase Console para garantir o login.
 const firebaseConfig = {
-  // Chave original do Firebase para garantir que a autenticação funcione.
-  apiKey: "AIzaSyDrKMludQUfLS0j4tG-kEdkVksvSnZaIPQ", 
+  apiKey: "AIzaSyC-Vd4Vv-bMvDx2nIPC",
   authDomain: "autopost-477601.firebaseapp.com",
   projectId: "autopost-477601",
-  storageBucket: "autopost-477601.firebasestorage.app",
+  storageBucket: "autopost-477601.appspot.com",
   messagingSenderId: "191333777971",
   appId: "1:191333777971:web:5aab90e1f1e39d19f61946",
   measurementId: "G-X4SBER5XVP"
