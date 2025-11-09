@@ -2,9 +2,11 @@
 // CONFIGURAÇÕES E INICIALIZAÇÃO
 // ===================================================================
 
-// Configuração EXATA do Firebase Console para garantir o login.
+// A ÚNICA CHAVE DE API CORRETA, VINDA DO FIREBASE CONSOLE, PARA TUDO.
+const SINGLE_API_KEY = "AIzaSyC-Vd4Vv-bMvDx2nIPC"; // A chave do seu firebaseConfig
+
 const firebaseConfig = {
-  apiKey: "AIzaSyC-Vd4Vv-bMvDx2nIPC",
+  apiKey: SINGLE_API_KEY, // Usa a chave única
   authDomain: "autopost-477601.firebaseapp.com",
   projectId: "autopost-477601",
   storageBucket: "autopost-477601.appspot.com",
@@ -13,8 +15,8 @@ const firebaseConfig = {
   measurementId: "G-X4SBER5XVP"
 };
 
-// Chave NOVA, dedicada APENAS para a API do Google (YouTube).
-const GOOGLE_API_KEY = "AIzaSyAUHcaB3L2oS9zQcPPVp_VKe356PS_ZE20"; 
+// A constante da API do Google também usa a MESMA chave única.
+const GOOGLE_API_KEY = SINGLE_API_KEY; 
 const GOOGLE_CLIENT_ID = "191333777971-7vjn3tn7t09tfhtf6mf0funjgibep2tf.apps.googleusercontent.com";
 const YOUTUBE_SCOPES = 'https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube';
 
