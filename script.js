@@ -17,7 +17,7 @@ const GOOGLE_CLIENT_ID = "191333777971-7vjn3tn7t09tfhtf6mf0funjgibep2tf.apps.goo
 const YOUTUBE_SCOPES = 'https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube';
 
 // Inicialização do Firebase com verificação
-if (!firebase.apps.length) {
+if (!firebase.apps.length ) {
   firebase.initializeApp(firebaseConfig);
   console.log("✅ Firebase inicializado");
 } else {
@@ -70,28 +70,42 @@ function validarArquivo(file, tiposAceitos) {
 }
 
 // ===================================================================
-// CALLBACKS DA API DO GOOGLE (ESCOPO GLOBAL)
+// CARREGAMENTO DINÂMICO DAS APIS DO GOOGLE
 // ===================================================================
 
-window.gapiLoaded = function() {
-  console.log("📡 GAPI script carregado");
-  gapi.load('client', initializeGapiClient);
-}
+function loadGoogleApiScripts() {
+  // Carrega GAPI
+  const gapiScript = document.createElement('script');
+  gapiScript.src = 'https://apis.google.com/js/api.js';
+  gapiScript.async = true;
+  gapiScript.defer = true;
+  gapiScript.onload = ( ) => {
+    console.log("📡 GAPI script carregado");
+    gapi.load('client', initializeGapiClient);
+  };
+  document.head.appendChild(gapiScript);
 
-window.gisLoaded = function() {
-  console.log("📡 GIS script carregado");
-  try {
-    AppState.tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: GOOGLE_CLIENT_ID,
-      scope: YOUTUBE_SCOPES,
-      callback: ''
-    });
-    AppState.gisReady = true;
-    console.log("✅ GIS client inicializado");
-    checkGoogleApiReadiness();
-  } catch (error) {
-    console.error("❌ Erro ao inicializar GIS:", error);
-  }
+  // Carrega GIS
+  const gisScript = document.createElement('script');
+  gisScript.src = 'https://accounts.google.com/gsi/client';
+  gisScript.async = true;
+  gisScript.defer = true;
+  gisScript.onload = ( ) => {
+    console.log("📡 GIS script carregado");
+    try {
+      AppState.tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: GOOGLE_CLIENT_ID,
+        scope: YOUTUBE_SCOPES,
+        callback: ''
+      });
+      AppState.gisReady = true;
+      console.log("✅ GIS client inicializado");
+      checkGoogleApiReadiness();
+    } catch (error) {
+      console.error("❌ Erro ao inicializar GIS:", error);
+    }
+  };
+  document.head.appendChild(gisScript);
 }
 
 async function initializeGapiClient() {
@@ -99,7 +113,7 @@ async function initializeGapiClient() {
     await gapi.client.init({
       apiKey: GOOGLE_API_KEY,
       discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest']
-    });
+    } );
     AppState.gapiReady = true;
     console.log("✅ GAPI client inicializado");
     checkGoogleApiReadiness();
@@ -204,11 +218,6 @@ window.excluirAgendamento = async function(docId) {
   }
 }
 
-window.closeModal = function(modalId) {
-  const modal = document.getElementById(modalId);
-  if (modal) modal.style.display = 'none';
-}
-
 // ===================================================================
 // INICIALIZAÇÃO DO APP
 // ===================================================================
@@ -216,7 +225,6 @@ window.closeModal = function(modalId) {
 document.addEventListener('DOMContentLoaded', () => {
   console.log("🚀 Aplicação inicializando...");
   
-  // Verificar dependências
   const dependencies = {
     'Firebase': typeof firebase !== 'undefined',
     'PapaParse': typeof Papa !== 'undefined',
@@ -233,7 +241,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return;
   }
 
-  // Monitor de autenticação
   auth.onAuthStateChanged(user => {
     if (user) {
       AppState.currentUser = user;
@@ -242,6 +249,7 @@ document.addEventListener('DOMContentLoaded', () => {
       appContainer.style.display = 'flex';
       if (typeof feather !== 'undefined') feather.replace();
       carregarCanais();
+      loadGoogleApiScripts();
     } else {
       AppState.currentUser = null;
       console.log("👤 Usuário não autenticado");
@@ -250,19 +258,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Event Listeners
   setupEventListeners();
 });
 
 function setupEventListeners() {
-  // Login / Logout
   const loginForm = document.getElementById('login-form');
-  const logoutBtn = document.getElementById('btn-logout');
-  
   if (loginForm) loginForm.addEventListener('submit', handleLogin);
+
+  const logoutBtn = document.getElementById('btn-logout');
   if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
 
-  // Navegação
   document.querySelectorAll('.sidebar-nav .nav-item').forEach(item => {
     item.addEventListener('click', (e) => {
       e.preventDefault();
@@ -280,7 +285,6 @@ function setupEventListeners() {
   const backBtn = document.getElementById('btn-back-to-dashboard');
   if (backBtn) backBtn.addEventListener('click', () => mostrarPagina('dashboard'));
 
-  // Modais
   const addChannelBtn = document.getElementById('btn-add-channel');
   if (addChannelBtn) addChannelBtn.addEventListener('click', () => openModal('channel-modal'));
 
@@ -297,21 +301,18 @@ function setupEventListeners() {
     });
   });
 
-  // YouTube
   const connectBtn = document.getElementById('btn-connect-youtube');
   if (connectBtn) connectBtn.addEventListener('click', solicitarAcessoYouTube);
 
-  // Biblioteca
   const uploadVideosBtn = document.getElementById('btn-upload-videos');
-  const uploadThumbsBtn = document.getElementById('btn-upload-thumbnails');
   const videoInput = document.getElementById('video-file-input');
-  const thumbInput = document.getElementById('thumbnail-file-input');
-
   if (uploadVideosBtn && videoInput) {
     uploadVideosBtn.addEventListener('click', () => videoInput.click());
     videoInput.addEventListener('change', handleFileUpload);
   }
 
+  const uploadThumbsBtn = document.getElementById('btn-upload-thumbnails');
+  const thumbInput = document.getElementById('thumbnail-file-input');
   if (uploadThumbsBtn && thumbInput) {
     uploadThumbsBtn.addEventListener('click', () => thumbInput.click());
     thumbInput.addEventListener('change', handleFileUpload);
@@ -321,19 +322,20 @@ function setupEventListeners() {
     button.addEventListener('click', () => switchTab(button.dataset.tab));
   });
 
-  // Agendamento
   const downloadTemplateBtn = document.getElementById('btn-download-csv-template');
+  if (downloadTemplateBtn) downloadTemplateBtn.addEventListener('click', baixarModeloCSV);
+
   const importCsvBtn = document.getElementById('btn-import-csv');
   const csvInput = document.getElementById('csv-file-input');
-  const scheduleForm = document.getElementById('schedule-form');
-  const clearSchedulesBtn = document.getElementById('btn-clear-schedules');
-
-  if (downloadTemplateBtn) downloadTemplateBtn.addEventListener('click', baixarModeloCSV);
   if (importCsvBtn && csvInput) {
     importCsvBtn.addEventListener('click', () => csvInput.click());
     csvInput.addEventListener('change', handleCsvImport);
   }
+
+  const scheduleForm = document.getElementById('schedule-form');
   if (scheduleForm) scheduleForm.addEventListener('submit', handleScheduleEdit);
+
+  const clearSchedulesBtn = document.getElementById('btn-clear-schedules');
   if (clearSchedulesBtn) clearSchedulesBtn.addEventListener('click', limparTodosAgendamentos);
 }
 
@@ -355,7 +357,6 @@ function handleLogin(e) {
   
   errorMessage.textContent = '';
 
-  // Validação
   if (!validarEmail(email)) {
     errorMessage.textContent = "E-mail inválido.";
     return;
@@ -370,17 +371,10 @@ function handleLogin(e) {
     .catch(error => {
       console.error("Erro de login:", error);
       let mensagem = "E-mail ou senha inválidos.";
-      
-      if (error.code === 'auth/user-not-found') {
-        mensagem = "Usuário não encontrado.";
-      } else if (error.code === 'auth/wrong-password') {
-        mensagem = "Senha incorreta.";
-      } else if (error.code === 'auth/invalid-email') {
-        mensagem = "E-mail inválido.";
-      } else if (error.code === 'auth/user-disabled') {
-        mensagem = "Usuário desabilitado.";
-      }
-      
+      if (error.code === 'auth/user-not-found') mensagem = "Usuário não encontrado.";
+      else if (error.code === 'auth/wrong-password') mensagem = "Senha incorreta.";
+      else if (error.code === 'auth/invalid-email') mensagem = "E-mail inválido.";
+      else if (error.code === 'auth/user-disabled') mensagem = "Usuário desabilitado.";
       errorMessage.textContent = mensagem;
     });
 }
@@ -527,7 +521,6 @@ async function buscarInfoCanalEAdicionar(accessToken) {
       const channelId = channel.id;
       const channelName = channel.snippet.title;
 
-      // Verificar se o canal já existe
       const canalExistente = await db.collection('usuarios')
         .doc(AppState.currentUser.uid)
         .collection('canais')
@@ -576,7 +569,6 @@ function handleFileUpload(event) {
   const tiposAceitos = isVideo ? ['video'] : ['image'];
 
   Array.from(files).forEach(file => {
-    // Validar tipo de arquivo
     if (!validarArquivo(file, tiposAceitos)) {
       showError(`Arquivo "${file.name}" não é um ${isVideo ? 'vídeo' : 'imagem'} válido.`);
       return;
@@ -601,7 +593,6 @@ function handleFileUpload(event) {
     );
   });
 
-  // Limpar input
   event.target.value = '';
 }
 
@@ -672,7 +663,6 @@ function baixarModeloCSV() {
   link.click();
   document.body.removeChild(link);
   
-  // Limpar URL blob
   URL.revokeObjectURL(url);
 }
 
@@ -680,7 +670,6 @@ function handleCsvImport(event) {
   const file = event.target.files[0];
   if (!file || !AppState.canalAtual) return;
 
-  // Validar tipo de arquivo
   if (!file.name.endsWith('.csv')) {
     showError('Por favor, selecione um arquivo .CSV válido.');
     event.target.value = '';
@@ -713,13 +702,11 @@ function handleCsvImport(event) {
 
         logCsvStatus(`Arquivo lido. ${results.data.length} registros encontrados. Validando...`);
 
-        // Filtrar linhas válidas
         const linhasValidas = results.data.filter((row, index) => {
           if (!row.data_publicacao || !row.hora_publicacao) {
             console.warn(`Linha ${index + 1} ignorada: faltam data/hora`);
             return false;
           }
-          
           try {
             const dataHora = `${row.data_publicacao}T${row.hora_publicacao}:00`;
             const date = new Date(dataHora);
@@ -731,7 +718,6 @@ function handleCsvImport(event) {
             console.warn(`Linha ${index + 1} ignorada: erro ao processar data/hora`);
             return false;
           }
-          
           return true;
         });
 
@@ -774,7 +760,6 @@ function handleCsvImport(event) {
     }
   });
 
-  // Limpar input
   event.target.value = '';
 }
 
@@ -845,101 +830,10 @@ async function handleScheduleEdit(e) {
   const docId = docIdInput.value;
   if (!docId) return;
 
-  // Coletar dados do formulário
   const campos = {
     nome_video: document.getElementById('schedule-nome-video')?.value || '',
     nome_thumbnail: document.getElementById('schedule-nome-thumbnail')?.value || '',
     titulo: document.getElementById('schedule-titulo')?.value || '',
     descricao: document.getElementById('schedule-descricao')?.value || '',
     tags: document.getElementById('schedule-tags')?.value || '',
-    data: document.getElementById('schedule-data-publicacao')?.value,
-    hora: document.getElementById('schedule-hora-publicacao')?.value
-  };
-
-  // Validar campos obrigatórios
-  if (!campos.titulo) {
-    showError('O título do vídeo é obrigatório.');
-    return;
-  }
-
-  if (!campos.data || !campos.hora) {
-    showError('Data e hora de publicação são obrigatórias.');
-    return;
-  }
-
-  // Validar data/hora
-  try {
-    const dataHora = `${campos.data}T${campos.hora}:00`;
-    const date = new Date(dataHora);
-    
-    if (isNaN(date.getTime())) {
-      showError('Data ou hora inválida.');
-      return;
-    }
-
-    const dataHoraTimestamp = firebase.firestore.Timestamp.fromDate(date);
-
-    const dadosAtualizados = {
-      nome_video: campos.nome_video,
-      nome_thumbnail: campos.nome_thumbnail,
-      titulo: campos.titulo,
-      descricao: campos.descricao,
-      tags: campos.tags,
-      dataHoraPublicacao: dataHoraTimestamp
-    };
-
-    await db.collection('agendamentos').doc(docId).update(dadosAtualizados);
-    showSuccess("Agendamento atualizado com sucesso!");
-    closeModal('schedule-modal');
-    renderizarAgendamentos();
-  } catch (error) {
-    console.error("Erro ao salvar alterações:", error);
-    showError("Não foi possível salvar as alterações.");
-  }
-}
-
-async function limparTodosAgendamentos() {
-  if (!AppState.canalAtual || AppState.agendamentosCache.length === 0) {
-    showError("Não há agendamentos para limpar.");
-    return;
-  }
-  
-  if (!confirm(`Tem certeza que deseja excluir TODOS os ${AppState.agendamentosCache.length} agendamentos deste canal?`)) {
-    return;
-  }
-
-  try {
-    const batch = db.batch();
-    
-    AppState.agendamentosCache.forEach(agendamento => {
-      const docRef = db.collection('agendamentos').doc(agendamento.docId);
-      batch.delete(docRef);
-    });
-
-    await batch.commit();
-    showSuccess("Todos os agendamentos foram excluídos com sucesso.");
-    renderizarAgendamentos();
-  } catch (error) {
-    console.error("Erro ao limpar agendamentos:", error);
-    showError("Ocorreu um erro ao limpar a fila.");
-  }
-}
-// ===================================================================
-// FUNÇÕES DE MODAL
-// ===================================================================
-
-function openModal(modalId) {
-  const modal = document.getElementById(modalId);
-  if (modal) modal.style.display = 'flex';
-}
-
-// ===================================================================
-// LOG DE INICIALIZAÇÃO
-// ===================================================================
-
-console.log(`
-╔════════════════════════════════════════╗
-║   🎬 AUTOPOST YOUTUBE DASHBOARD       ║
-║   ✅ Sistema inicializado              ║
-╚════════════════════════════════════════╝
-`);
+    data: document.

@@ -8,12 +8,12 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
-
-    <!-- Google APIs com callbacks configurados corretamente -->
-    <script async defer src="https://apis.google.com/js/api.js?onload=gapiLoaded"></script>
-    <script async defer src="https://accounts.google.com/gsi/client?onload=gisLoaded"></script>
+    <!-- REMOVEMOS os scripts do Google daqui -->
 </head>
 <body>
+
+    <!-- Todo o seu HTML existente continua aqui, sem alterações -->
+    <!-- ... (login-page, container, main-content, modais, etc. ) ... -->
 
     <!-- Tela de Login -->
     <div id="login-page" style="display: none;">
@@ -225,7 +225,7 @@
     <!-- Modal para Adicionar Canal -->
     <div id="channel-modal" class="modal">
         <div class="modal-content">
-            <span class="close-button">&times;</span>
+            <span class="close-button" onclick="closeModal('channel-modal')">&times;</span>
             <h3 id="modal-title">Conectar Novo Canal</h3>
             <p>Para adicionar um novo canal, você precisa autorizar o Autopost a acessar sua conta do YouTube de forma segura.</p>
             <button id="btn-connect-youtube" class="btn btn-primary" style="width: 100%;" disabled>
@@ -237,7 +237,7 @@
     <!-- Modal para Editar Agendamento -->
     <div id="schedule-modal" class="modal">
         <div class="modal-content">
-            <span class="close-button">&times;</span>
+            <span class="close-button" onclick="closeModal('schedule-modal')">&times;</span>
             <h3>Editar Agendamento</h3>
             <form id="schedule-form">
                 <input type="hidden" id="schedule-id-input">
@@ -282,7 +282,7 @@
     <script src="https://unpkg.com/papaparse@5.3.2/papaparse.min.js"></script>
     <script src="https://unpkg.com/feather-icons"></script>
     
-    <!-- Script principal (sempre por último) -->
+    <!-- Script principal (sempre por último ) -->
     <script src="script.js"></script>
 
 </body>
