@@ -6,7 +6,7 @@ const firebaseConfig = {
   apiKey: "AIzaSyDrKMIudQUfLS0j4tG-kEdkVksvSnZaIPQ",
   authDomain: "autopost-477601.firebaseapp.com",
   projectId: "autopost-477601",
-  storageBucket: "autopost-477601.appspot.com",
+  storageBucket: "autopost-477601.firebasestorage.app",
   messagingSenderId: "191333777971",
   appId: "1:191333777971:web:5aab90e1f1e39d19f61946",
   measurementId: "G-X4SBER5XVP"
@@ -70,6 +70,24 @@ function validarArquivo(file, tiposAceitos) {
 }
 
 // ===================================================================
+// FUNÇÕES DE MODAL
+// ===================================================================
+
+function openModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) {
+    modal.style.display = 'flex';
+  }
+}
+
+function closeModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) {
+    modal.style.display = 'none';
+  }
+}
+
+// ===================================================================
 // CARREGAMENTO DINÂMICO DAS APIS DO GOOGLE
 // ===================================================================
 
@@ -127,7 +145,7 @@ function checkGoogleApiReadiness() {
     const connectButton = document.getElementById('btn-connect-youtube');
     if (connectButton) {
       connectButton.disabled = false;
-      connectButton.innerHTML = `<i data-feather="youtube" class="btn-icon-feather"></i> Conectar com o YouTube`;
+      connectButton.innerHTML = `<i data-feather="youtube"></i> Conectar com o YouTube`;
       if (typeof feather !== 'undefined') feather.replace();
     }
   }
@@ -216,11 +234,6 @@ window.excluirAgendamento = async function(docId) {
     console.error("Erro ao excluir agendamento:", error);
     showError("Ocorreu um erro ao excluir o agendamento.");
   }
-}
-
-window.closeModal = function(modalId) {
-  const modal = document.getElementById(modalId);
-  if (modal) modal.style.display = 'none';
 }
 
 // ===================================================================
@@ -841,88 +854,70 @@ async function handleScheduleEdit(e) {
     titulo: document.getElementById('schedule-titulo')?.value || '',
     descricao: document.getElementById('schedule-descricao')?.value || '',
     tags: document.getElementById('schedule-tags')?.value || '',
-    data: document.getElementById('schedule-data-publicacao')?.value,
-    hora: document.getElementById('schedule-hora-publicacao')?.value
+    data_publicacao: document.getElementById('schedule-data-publicacao')?.value || '',
+    hora_publicacao: document.getElementById('schedule-hora-publicacao')?.value || ''
   };
 
-  if (!campos.titulo) {
-    showError('O título do vídeo é obrigatório.');
-    return;
-  }
-
-  if (!campos.data || !campos.hora) {
-    showError('Data e hora de publicação são obrigatórias.');
+  if (!campos.data_publicacao || !campos.hora_publicacao) {
+    showError("Data e hora de publicação são obrigatórias.");
     return;
   }
 
   try {
-    const dataHora = `${campos.data}T${campos.hora}:00`;
-    const date = new Date(dataHora);
-    
-    if (isNaN(date.getTime())) {
-      showError('Data ou hora inválida.');
-      return;
-    }
+    const dataHora = `${campos.data_publicacao}T${campos.hora_publicacao}:00`;
+    const dataHoraTimestamp = firebase.firestore.Timestamp.fromDate(new Date(dataHora));
 
-    const dataHoraTimestamp = firebase.firestore.Timestamp.fromDate(date);
-
-    const dadosAtualizados = {
+    await db.collection('agendamentos').doc(docId).update({
       nome_video: campos.nome_video,
       nome_thumbnail: campos.nome_thumbnail,
       titulo: campos.titulo,
       descricao: campos.descricao,
       tags: campos.tags,
       dataHoraPublicacao: dataHoraTimestamp
-    };
+    });
 
-    await db.collection('agendamentos').doc(docId).update(dadosAtualizados);
     showSuccess("Agendamento atualizado com sucesso!");
     closeModal('schedule-modal');
     renderizarAgendamentos();
   } catch (error) {
-    console.error("Erro ao salvar alterações:", error);
-    showError("Não foi possível salvar as alterações.");
+    console.error("Erro ao editar agendamento:", error);
+    showError("Erro ao atualizar agendamento.");
   }
 }
 
 async function limparTodosAgendamentos() {
-  if (!AppState.canalAtual || AppState.agendamentosCache.length === 0) {
-    showError("Não há agendamentos para limpar.");
-    return;
-  }
+  if (!AppState.canalAtual) return;
   
-  if (!confirm(`Tem certeza que deseja excluir TODOS os ${AppState.agendamentosCache.length} agendamentos deste canal?`)) {
+  if (!confirm("Tem certeza que deseja limpar TODOS os agendamentos deste canal? Esta ação não pode ser desfeita!")) {
     return;
   }
 
   try {
+    const snapshot = await db.collection('agendamentos')
+      .where('canalId', '==', AppState.canalAtual.docId)
+      .get();
+
+    if (snapshot.empty) {
+      showError("Não há agendamentos para limpar.");
+      return;
+    }
+
     const batch = db.batch();
-    
-    AppState.agendamentosCache.forEach(agendamento => {
-      const docRef = db.collection('agendamentos').doc(agendamento.docId);
-      batch.delete(docRef);
+    snapshot.docs.forEach(doc => {
+      batch.delete(doc.ref);
     });
 
     await batch.commit();
-    showSuccess("Todos os agendamentos foram excluídos com sucesso.");
+    showSuccess(`${snapshot.size} agendamentos foram excluídos com sucesso.`);
     renderizarAgendamentos();
   } catch (error) {
     console.error("Erro ao limpar agendamentos:", error);
-    showError("Ocorreu um erro ao limpar a fila.");
+    showError("Erro ao limpar agendamentos.");
   }
 }
 
 // ===================================================================
-// FUNÇÕES DE MODAL
-// ===================================================================
-
-function openModal(modalId) {
-  const modal = document.getElementById(modalId);
-  if (modal) modal.style.display = 'flex';
-}
-
-// ===================================================================
-// LOG DE INICIALIZAÇÃO
+// INICIALIZAÇÃO FINAL
 // ===================================================================
 
 console.log(`
