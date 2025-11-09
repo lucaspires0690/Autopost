@@ -2,239 +2,288 @@
 // CONFIGURAÇÕES E CONSTANTES
 // ===================================================================
 
-const CONFIG = {
-  firebase: {
-    apiKey: "AIzaSyDrKMIudQUfLS0j4tG-kEdkVksvSnZaIPQ",
-    authDomain: "autopost-477601.firebaseapp.com",
-    projectId: "autopost-477601",
-    storageBucket: "autopost-477601.appspot.com",
-    messagingSenderId: "191333777971",
-    appId: "1:191333777971:web:5aab90e1f1e39d19f61946",
-    measurementId: "G-X4SBER5XVP"
-  },
-  google: {
-    clientId: "191333777971-7vjn3tn7t09tfhtf6mf0funjgibep2tf.apps.googleusercontent.com",
-    scopes: 'https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube'
-  }
+const firebaseConfig = {
+  apiKey: "AIzaSyDrKMIudQUfLS0j4tG-kEdkVksvSnZaIPQ",
+  authDomain: "autopost-477601.firebaseapp.com",
+  projectId: "autopost-477601",
+  storageBucket: "autopost-477601.appspot.com",
+  messagingSenderId: "191333777971",
+  appId: "1:191333777971:web:5aab90e1f1e39d19f61946",
+  measurementId: "G-X4SBER5XVP"
 };
 
-// ===================================================================
-// ESTADO GLOBAL
-// ===================================================================
+const GOOGLE_API_KEY = firebaseConfig.apiKey;
+const GOOGLE_CLIENT_ID = "191333777971-7vjn3tn7t09tfhtf6mf0funjgibep2tf.apps.googleusercontent.com";
+const YOUTUBE_SCOPES = 'https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube';
 
+// Inicialização do Firebase com verificação
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+  console.log("✅ Firebase inicializado");
+} else {
+  console.log("ℹ️ Firebase já estava inicializado");
+}
+
+const auth = firebase.auth();
+const db = firebase.firestore();
+const storage = firebase.storage();
+
+// Estado global da aplicação
 const AppState = {
   currentUser: null,
-  currentChannel: null,
-  schedulesCache: [],
+  canalAtual: null,
+  agendamentosCache: [],
   tokenClient: null,
-  isGapiReady: false,
-  isGisReady: false,
-  db: null,
-  auth: null,
-  storage: null
+  gapiReady: false,
+  gisReady: false
 };
 
 // ===================================================================
-// INICIALIZAÇÃO DO FIREBASE
+// FUNÇÕES UTILITÁRIAS
 // ===================================================================
 
-function initFirebase() {
-  try {
-    if (!firebase || !firebase.apps.length) {
-      firebase.initializeApp(CONFIG.firebase);
-    }
-    
-    AppState.auth = firebase.auth();
-    AppState.db = firebase.firestore();
-    AppState.storage = firebase.storage();
-    
-    console.log("✓ Firebase inicializado com sucesso");
-    return true;
-  } catch (error) {
-    console.error("✗ Erro ao inicializar Firebase:", error);
-    showError("Erro ao conectar com o servidor. Recarregue a página.");
-    return false;
-  }
+function escapeHtml(text) {
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function showError(message) {
+  console.error("❌ Erro:", message);
+  alert(message);
+}
+
+function showSuccess(message) {
+  console.log("✅ Sucesso:", message);
+  alert(message);
+}
+
+function validarEmail(email) {
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return regex.test(email);
+}
+
+function validarArquivo(file, tiposAceitos) {
+  if (!file) return false;
+  return tiposAceitos.some(tipo => file.type.startsWith(tipo));
 }
 
 // ===================================================================
-// INICIALIZAÇÃO DAS APIS DO GOOGLE
+// CALLBACKS DA API DO GOOGLE (ESCOPO GLOBAL)
 // ===================================================================
 
 window.gapiLoaded = function() {
+  console.log("📡 GAPI script carregado");
   gapi.load('client', initializeGapiClient);
-};
+}
 
 window.gisLoaded = function() {
+  console.log("📡 GIS script carregado");
   try {
     AppState.tokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: CONFIG.google.clientId,
-      scope: CONFIG.google.scopes,
+      client_id: GOOGLE_CLIENT_ID,
+      scope: YOUTUBE_SCOPES,
       callback: ''
     });
-    AppState.isGisReady = true;
-    console.log("✓ GIS client inicializado");
+    AppState.gisReady = true;
+    console.log("✅ GIS client inicializado");
     checkGoogleApiReadiness();
   } catch (error) {
-    console.error("✗ Erro ao inicializar GIS:", error);
+    console.error("❌ Erro ao inicializar GIS:", error);
   }
-};
+}
 
 async function initializeGapiClient() {
   try {
     await gapi.client.init({
-      apiKey: CONFIG.firebase.apiKey,
+      apiKey: GOOGLE_API_KEY,
       discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest']
     });
-    AppState.isGapiReady = true;
-    console.log("✓ GAPI client inicializado");
+    AppState.gapiReady = true;
+    console.log("✅ GAPI client inicializado");
     checkGoogleApiReadiness();
   } catch (error) {
-    console.error("✗ Erro ao inicializar GAPI:", error);
+    console.error("❌ Erro ao inicializar GAPI:", error);
   }
 }
 
 function checkGoogleApiReadiness() {
-  if (AppState.isGapiReady && AppState.isGisReady) {
+  if (AppState.gapiReady && AppState.gisReady) {
     const connectButton = document.getElementById('btn-connect-youtube');
     if (connectButton) {
       connectButton.disabled = false;
-      connectButton.innerHTML = '<i data-feather="youtube" class="btn-icon-feather"></i> Conectar com o YouTube';
+      connectButton.innerHTML = `<i data-feather="youtube" class="btn-icon-feather"></i> Conectar com o YouTube`;
       if (typeof feather !== 'undefined') feather.replace();
     }
   }
 }
 
 // ===================================================================
-// INICIALIZAÇÃO DO DOM
+// FUNÇÕES GLOBAIS PARA ONCLICK (EXPOSTAS NO WINDOW)
 // ===================================================================
 
-document.addEventListener('DOMContentLoaded', async () => {
-  // Inicializa Firebase
-  if (!initFirebase()) return;
+window.entrarCanal = function(channelId, channelName) {
+  AppState.canalAtual = { docId: channelId, nome: channelName };
+  const titleElement = document.getElementById('channel-management-title');
+  if (titleElement) {
+    titleElement.textContent = `Gerenciando: ${escapeHtml(channelName)}`;
+  }
+  mostrarPagina('channel-management');
+  mostrarSubpagina('biblioteca');
+}
 
-  // Elementos do DOM
-  const elements = {
-    loginPage: document.getElementById('login-page'),
-    appContainer: document.querySelector('.container'),
-    loginForm: document.getElementById('login-form'),
-    logoutBtn: document.getElementById('btn-logout'),
-    addChannelBtn: document.getElementById('btn-add-channel'),
-    connectYoutubeBtn: document.getElementById('btn-connect-youtube'),
-    backToDashboardBtn: document.getElementById('btn-back-to-dashboard'),
-    uploadVideosBtn: document.getElementById('btn-upload-videos'),
-    uploadThumbnailsBtn: document.getElementById('btn-upload-thumbnails'),
-    videoFileInput: document.getElementById('video-file-input'),
-    thumbnailFileInput: document.getElementById('thumbnail-file-input'),
-    downloadCsvBtn: document.getElementById('btn-download-csv-template'),
-    importCsvBtn: document.getElementById('btn-import-csv'),
-    csvFileInput: document.getElementById('csv-file-input'),
-    scheduleForm: document.getElementById('schedule-form'),
-    clearSchedulesBtn: document.getElementById('btn-clear-schedules')
+window.excluirCanal = async function(channelId) {
+  if (!confirm("Tem certeza que deseja excluir este canal e todos os seus dados?")) return;
+  
+  try {
+    await db.collection('usuarios').doc(AppState.currentUser.uid).collection('canais').doc(channelId).delete();
+    showSuccess("Canal excluído com sucesso.");
+    carregarCanais();
+  } catch (error) {
+    console.error("Erro ao excluir canal:", error);
+    showError("Ocorreu um erro ao excluir o canal.");
+  }
+}
+
+window.excluirMidia = async function(fullPath) {
+  if (!confirm("Tem certeza que deseja excluir este arquivo?")) return;
+  
+  try {
+    await storage.ref(fullPath).delete();
+    showSuccess("Arquivo excluído com sucesso.");
+    carregarMidias();
+  } catch (error) {
+    console.error("Erro ao excluir mídia:", error);
+    showError("Ocorreu um erro ao excluir o arquivo.");
+  }
+}
+
+window.abrirModalEdicao = function(docId) {
+  const agendamento = AppState.agendamentosCache.find(a => a.docId === docId);
+  if (!agendamento) return;
+
+  try {
+    const data = agendamento.dataHoraPublicacao.toDate();
+    const dataISO = data.toISOString().split('T')[0];
+    const horaISO = data.toTimeString().split(' ')[0].substring(0, 5);
+
+    const fields = {
+      'schedule-id-input': docId,
+      'schedule-nome-video': agendamento.nome_video || '',
+      'schedule-nome-thumbnail': agendamento.nome_thumbnail || '',
+      'schedule-titulo': agendamento.titulo || '',
+      'schedule-descricao': agendamento.descricao || '',
+      'schedule-tags': agendamento.tags || '',
+      'schedule-data-publicacao': dataISO,
+      'schedule-hora-publicacao': horaISO
+    };
+
+    Object.entries(fields).forEach(([id, value]) => {
+      const element = document.getElementById(id);
+      if (element) element.value = value;
+    });
+
+    openModal('schedule-modal');
+  } catch (error) {
+    console.error("Erro ao abrir modal de edição:", error);
+    showError("Erro ao carregar dados do agendamento.");
+  }
+}
+
+window.excluirAgendamento = async function(docId) {
+  if (!confirm("Tem certeza que deseja excluir este agendamento?")) return;
+  
+  try {
+    await db.collection('agendamentos').doc(docId).delete();
+    showSuccess("Agendamento excluído com sucesso.");
+    renderizarAgendamentos();
+  } catch (error) {
+    console.error("Erro ao excluir agendamento:", error);
+    showError("Ocorreu um erro ao excluir o agendamento.");
+  }
+}
+
+window.closeModal = function(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) modal.style.display = 'none';
+}
+
+// ===================================================================
+// INICIALIZAÇÃO DO APP
+// ===================================================================
+
+document.addEventListener('DOMContentLoaded', () => {
+  console.log("🚀 Aplicação inicializando...");
+  
+  // Verificar dependências
+  const dependencies = {
+    'Firebase': typeof firebase !== 'undefined',
+    'PapaParse': typeof Papa !== 'undefined',
+    'Feather Icons': typeof feather !== 'undefined'
   };
+  
+  console.log("📦 Dependências:", dependencies);
+  
+  const loginPage = document.getElementById('login-page');
+  const appContainer = document.querySelector('.container');
 
-  // Verifica se elementos essenciais existem
-  if (!elements.loginPage || !elements.appContainer) {
-    console.error("✗ Elementos essenciais do DOM não encontrados");
+  if (!loginPage || !appContainer) {
+    console.error("❌ Elementos principais não encontrados!");
     return;
   }
 
-  // ===================================================================
-  // AUTENTICAÇÃO
-  // ===================================================================
-
-  AppState.auth.onAuthStateChanged(user => {
+  // Monitor de autenticação
+  auth.onAuthStateChanged(user => {
     if (user) {
       AppState.currentUser = user;
-      elements.loginPage.style.display = 'none';
-      elements.appContainer.style.display = 'flex';
+      console.log("👤 Usuário autenticado:", user.email);
+      loginPage.style.display = 'none';
+      appContainer.style.display = 'flex';
       if (typeof feather !== 'undefined') feather.replace();
-      loadChannels();
+      carregarCanais();
     } else {
       AppState.currentUser = null;
-      AppState.currentChannel = null;
-      elements.loginPage.style.display = 'block';
-      elements.appContainer.style.display = 'none';
+      console.log("👤 Usuário não autenticado");
+      loginPage.style.display = 'block';
+      appContainer.style.display = 'none';
     }
   });
 
-  // ===================================================================
-  // EVENT LISTENERS
-  // ===================================================================
+  // Event Listeners
+  setupEventListeners();
+});
 
-  // Login/Logout
-  if (elements.loginForm) {
-    elements.loginForm.addEventListener('submit', handleLogin);
-  }
-  if (elements.logoutBtn) {
-    elements.logoutBtn.addEventListener('click', handleLogout);
-  }
+function setupEventListeners() {
+  // Login / Logout
+  const loginForm = document.getElementById('login-form');
+  const logoutBtn = document.getElementById('btn-logout');
+  
+  if (loginForm) loginForm.addEventListener('submit', handleLogin);
+  if (logoutBtn) logoutBtn.addEventListener('click', handleLogout);
 
-  // Navegação principal
+  // Navegação
   document.querySelectorAll('.sidebar-nav .nav-item').forEach(item => {
     item.addEventListener('click', (e) => {
       e.preventDefault();
-      const page = item.dataset.page;
-      if (page) showPage(page);
+      mostrarPagina(item.dataset.page);
     });
   });
 
-  // Navegação do canal
   document.querySelectorAll('.channel-sidebar .channel-nav-item').forEach(item => {
     item.addEventListener('click', (e) => {
       e.preventDefault();
-      const subpage = item.dataset.subpage;
-      if (subpage) showSubpage(subpage);
+      mostrarSubpagina(item.dataset.subpage);
     });
   });
 
-  // Botões de ação
-  if (elements.addChannelBtn) {
-    elements.addChannelBtn.addEventListener('click', () => openModal('channel-modal'));
-  }
-  if (elements.connectYoutubeBtn) {
-    elements.connectYoutubeBtn.addEventListener('click', requestYouTubeAccess);
-  }
-  if (elements.backToDashboardBtn) {
-    elements.backToDashboardBtn.addEventListener('click', () => showPage('dashboard'));
-  }
-
-  // Upload de arquivos
-  if (elements.uploadVideosBtn && elements.videoFileInput) {
-    elements.uploadVideosBtn.addEventListener('click', () => elements.videoFileInput.click());
-    elements.videoFileInput.addEventListener('change', (e) => handleFileUpload(e, 'videos'));
-  }
-  if (elements.uploadThumbnailsBtn && elements.thumbnailFileInput) {
-    elements.uploadThumbnailsBtn.addEventListener('click', () => elements.thumbnailFileInput.click());
-    elements.thumbnailFileInput.addEventListener('change', (e) => handleFileUpload(e, 'thumbnails'));
-  }
-
-  // CSV
-  if (elements.downloadCsvBtn) {
-    elements.downloadCsvBtn.addEventListener('click', downloadCsvTemplate);
-  }
-  if (elements.importCsvBtn && elements.csvFileInput) {
-    elements.importCsvBtn.addEventListener('click', () => elements.csvFileInput.click());
-    elements.csvFileInput.addEventListener('change', handleCsvImport);
-  }
-
-  // Agendamentos
-  if (elements.scheduleForm) {
-    elements.scheduleForm.addEventListener('submit', handleScheduleEdit);
-  }
-  if (elements.clearSchedulesBtn) {
-    elements.clearSchedulesBtn.addEventListener('click', clearAllSchedules);
-  }
-
-  // Tabs
-  document.querySelectorAll('.tab-button').forEach(button => {
-    button.addEventListener('click', () => {
-      const tab = button.dataset.tab;
-      if (tab) switchTab(tab);
-    });
-  });
+  const backBtn = document.getElementById('btn-back-to-dashboard');
+  if (backBtn) backBtn.addEventListener('click', () => mostrarPagina('dashboard'));
 
   // Modais
+  const addChannelBtn = document.getElementById('btn-add-channel');
+  if (addChannelBtn) addChannelBtn.addEventListener('click', () => openModal('channel-modal'));
+
   document.querySelectorAll('.modal .close-button').forEach(button => {
     button.addEventListener('click', () => {
       const modal = button.closest('.modal');
@@ -243,17 +292,56 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   window.addEventListener('click', (event) => {
-    if (event.target.classList.contains('modal')) {
-      closeModal(event.target.id);
-    }
+    document.querySelectorAll('.modal').forEach(modal => {
+      if (event.target === modal) closeModal(modal.id);
+    });
   });
-});
+
+  // YouTube
+  const connectBtn = document.getElementById('btn-connect-youtube');
+  if (connectBtn) connectBtn.addEventListener('click', solicitarAcessoYouTube);
+
+  // Biblioteca
+  const uploadVideosBtn = document.getElementById('btn-upload-videos');
+  const uploadThumbsBtn = document.getElementById('btn-upload-thumbnails');
+  const videoInput = document.getElementById('video-file-input');
+  const thumbInput = document.getElementById('thumbnail-file-input');
+
+  if (uploadVideosBtn && videoInput) {
+    uploadVideosBtn.addEventListener('click', () => videoInput.click());
+    videoInput.addEventListener('change', handleFileUpload);
+  }
+
+  if (uploadThumbsBtn && thumbInput) {
+    uploadThumbsBtn.addEventListener('click', () => thumbInput.click());
+    thumbInput.addEventListener('change', handleFileUpload);
+  }
+
+  document.querySelectorAll('.tab-button').forEach(button => {
+    button.addEventListener('click', () => switchTab(button.dataset.tab));
+  });
+
+  // Agendamento
+  const downloadTemplateBtn = document.getElementById('btn-download-csv-template');
+  const importCsvBtn = document.getElementById('btn-import-csv');
+  const csvInput = document.getElementById('csv-file-input');
+  const scheduleForm = document.getElementById('schedule-form');
+  const clearSchedulesBtn = document.getElementById('btn-clear-schedules');
+
+  if (downloadTemplateBtn) downloadTemplateBtn.addEventListener('click', baixarModeloCSV);
+  if (importCsvBtn && csvInput) {
+    importCsvBtn.addEventListener('click', () => csvInput.click());
+    csvInput.addEventListener('change', handleCsvImport);
+  }
+  if (scheduleForm) scheduleForm.addEventListener('submit', handleScheduleEdit);
+  if (clearSchedulesBtn) clearSchedulesBtn.addEventListener('click', limparTodosAgendamentos);
+}
 
 // ===================================================================
 // FUNÇÕES DE AUTENTICAÇÃO
 // ===================================================================
 
-async function handleLogin(e) {
+function handleLogin(e) {
   e.preventDefault();
   
   const emailInput = document.getElementById('login-email');
@@ -265,97 +353,80 @@ async function handleLogin(e) {
   const email = emailInput.value.trim();
   const password = passwordInput.value;
   
-  // Validação básica
-  if (!email || !password) {
-    errorMessage.textContent = 'Por favor, preencha todos os campos.';
-    return;
-  }
-  
-  if (!isValidEmail(email)) {
-    errorMessage.textContent = 'Por favor, insira um e-mail válido.';
-    return;
-  }
-  
   errorMessage.textContent = '';
-  
-  try {
-    await AppState.auth.signInWithEmailAndPassword(email, password);
-  } catch (error) {
-    console.error("Erro no login:", error);
-    
-    let message = 'E-mail ou senha inválidos.';
-    if (error.code === 'auth/user-not-found') {
-      message = 'Usuário não encontrado.';
-    } else if (error.code === 'auth/wrong-password') {
-      message = 'Senha incorreta.';
-    } else if (error.code === 'auth/too-many-requests') {
-      message = 'Muitas tentativas. Tente novamente mais tarde.';
-    }
-    
-    errorMessage.textContent = message;
+
+  // Validação
+  if (!validarEmail(email)) {
+    errorMessage.textContent = "E-mail inválido.";
+    return;
   }
+
+  if (password.length < 6) {
+    errorMessage.textContent = "A senha deve ter pelo menos 6 caracteres.";
+    return;
+  }
+
+  auth.signInWithEmailAndPassword(email, password)
+    .catch(error => {
+      console.error("Erro de login:", error);
+      let mensagem = "E-mail ou senha inválidos.";
+      
+      if (error.code === 'auth/user-not-found') {
+        mensagem = "Usuário não encontrado.";
+      } else if (error.code === 'auth/wrong-password') {
+        mensagem = "Senha incorreta.";
+      } else if (error.code === 'auth/invalid-email') {
+        mensagem = "E-mail inválido.";
+      } else if (error.code === 'auth/user-disabled') {
+        mensagem = "Usuário desabilitado.";
+      }
+      
+      errorMessage.textContent = mensagem;
+    });
 }
 
-async function handleLogout() {
-  try {
-    await AppState.auth.signOut();
-  } catch (error) {
-    console.error("Erro no logout:", error);
+function handleLogout() {
+  auth.signOut().catch(error => {
+    console.error("Erro ao fazer logout:", error);
     showError("Erro ao fazer logout.");
-  }
+  });
 }
 
 // ===================================================================
 // FUNÇÕES DE NAVEGAÇÃO
 // ===================================================================
 
-function showPage(pageId) {
-  document.querySelectorAll('.page').forEach(page => {
-    page.classList.remove('active');
-  });
-  
+function mostrarPagina(pageId) {
+  document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
   const targetPage = document.getElementById(`${pageId}-page`);
-  if (targetPage) {
-    targetPage.classList.add('active');
-  }
+  if (targetPage) targetPage.classList.add('active');
   
   document.querySelectorAll('.sidebar-nav .nav-item').forEach(item => {
     item.classList.toggle('active', item.dataset.page === pageId);
   });
 }
 
-function showSubpage(subpageId) {
-  document.querySelectorAll('.channel-page').forEach(page => {
-    page.classList.remove('active');
-  });
-  
+function mostrarSubpagina(subpageId) {
+  document.querySelectorAll('.channel-page').forEach(page => page.classList.remove('active'));
   const targetSubpage = document.getElementById(`${subpageId}-subpage`);
-  if (targetSubpage) {
-    targetSubpage.classList.add('active');
-  }
+  if (targetSubpage) targetSubpage.classList.add('active');
   
   document.querySelectorAll('.channel-sidebar .channel-nav-item').forEach(item => {
     item.classList.toggle('active', item.dataset.subpage === subpageId);
   });
 
-  // Carrega dados específicos da subpágina
   if (subpageId === 'biblioteca') {
-    loadMedia();
+    carregarMidias();
     switchTab('videos');
   } else if (subpageId === 'agendamento') {
-    renderSchedules();
+    renderizarAgendamentos();
   }
 }
 
 function switchTab(tabId) {
-  document.querySelectorAll('.tab-content').forEach(content => {
-    content.classList.remove('active');
-  });
-  
-  const targetContent = document.getElementById(`${tabId}-tab-content`);
-  if (targetContent) {
-    targetContent.classList.add('active');
-  }
+  document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+  const targetTab = document.getElementById(`${tabId}-tab-content`);
+  if (targetTab) targetTab.classList.add('active');
   
   document.querySelectorAll('.tab-button').forEach(button => {
     button.classList.toggle('active', button.dataset.tab === tabId);
@@ -366,44 +437,45 @@ function switchTab(tabId) {
 // FUNÇÕES DE CANAL
 // ===================================================================
 
-async function loadChannels() {
+async function carregarCanais() {
   if (!AppState.currentUser) return;
   
-  const tableBody = document.querySelector('#channels-table tbody');
+  const tableBody = document.getElementById('channels-table')?.querySelector('tbody');
   if (!tableBody) return;
   
   tableBody.innerHTML = '<tr><td colspan="5">Carregando canais...</td></tr>';
 
   try {
-    const snapshot = await AppState.db
-      .collection('usuarios')
+    const snapshot = await db.collection('usuarios')
       .doc(AppState.currentUser.uid)
       .collection('canais')
       .orderBy('dataCriacao', 'desc')
       .get();
 
     if (snapshot.empty) {
-      tableBody.innerHTML = '<tr><td colspan="5">Nenhum canal adicionado. Clique em "Adicionar Canal" para começar.</td></tr>';
+      tableBody.innerHTML = '<tr><td colspan="5">Nenhum canal adicionado ainda.</td></tr>';
       return;
     }
 
     let html = '';
     snapshot.forEach(doc => {
       const canal = doc.data();
-      const dataCriacao = canal.dataCriacao ? canal.dataCriacao.toDate().toLocaleDateString('pt-BR') : 'N/A';
-      const nomeSeguro = escapeHtml(canal.nome || 'Sem nome');
-      
+      const nomeCanal = escapeHtml(canal.nome);
+      const dataFormatada = canal.dataCriacao ? 
+        canal.dataCriacao.toDate().toLocaleDateString('pt-BR') : 
+        'N/A';
+
       html += `
-        <tr data-id="${doc.id}">
+        <tr data-id="${escapeHtml(doc.id)}" data-nome="${nomeCanal}">
           <td>${escapeHtml(doc.id)}</td>
-          <td>${nomeSeguro}</td>
-          <td>${dataCriacao}</td>
+          <td>${nomeCanal}</td>
+          <td>${dataFormatada}</td>
           <td><span class="status-badge active">Ativo</span></td>
           <td class="actions">
-            <button class="btn-icon" onclick="window.enterChannel('${doc.id}', '${nomeSeguro.replace(/'/g, "\\'")}')">
+            <button class="btn-icon" onclick="entrarCanal('${escapeHtml(doc.id)}', '${nomeCanal}')">
               <i data-feather="arrow-right-circle"></i>
             </button>
-            <button class="btn-icon" onclick="window.deleteChannel('${doc.id}')">
+            <button class="btn-icon" onclick="excluirCanal('${escapeHtml(doc.id)}')">
               <i data-feather="trash-2"></i>
             </button>
           </td>
@@ -415,218 +487,155 @@ async function loadChannels() {
     if (typeof feather !== 'undefined') feather.replace();
   } catch (error) {
     console.error("Erro ao carregar canais:", error);
-    tableBody.innerHTML = '<tr><td colspan="5">Erro ao carregar canais. Tente recarregar a página.</td></tr>';
+    tableBody.innerHTML = '<tr><td colspan="5">Erro ao carregar canais.</td></tr>';
   }
 }
 
-function requestYouTubeAccess() {
-  if (!AppState.isGisReady || !AppState.isGapiReady) {
-    showError("A integração com o Google ainda não está pronta. Aguarde alguns segundos.");
+function solicitarAcessoYouTube() {
+  if (!AppState.gisReady || !AppState.gapiReady) {
+    showError("A integração com o Google ainda não está pronta. Por favor, aguarde.");
     return;
   }
 
-  AppState.tokenClient.callback = async (response) => {
-    if (response.error !== undefined) {
-      console.error("Erro na autorização:", response);
-      showError("Erro durante a autorização com o Google.");
+  AppState.tokenClient.callback = async (resp) => {
+    if (resp.error !== undefined) {
+      console.error("Erro no callback do token:", resp);
+      showError("Ocorreu um erro durante a autorização com o Google.");
       return;
     }
-    
-    await fetchChannelInfoAndAdd(response.access_token);
+    await buscarInfoCanalEAdicionar(resp.access_token);
   };
 
   try {
     AppState.tokenClient.requestAccessToken({ prompt: 'consent' });
   } catch (error) {
     console.error("Erro ao solicitar acesso:", error);
-    showError("Erro ao iniciar autorização.");
+    showError("Erro ao solicitar autorização.");
   }
 }
 
-async function fetchChannelInfoAndAdd(accessToken) {
+async function buscarInfoCanalEAdicionar(accessToken) {
   try {
     gapi.client.setToken({ access_token: accessToken });
-    
-    const response = await gapi.client.youtube.channels.list({
-      part: 'snippet',
-      mine: true
+    const response = await gapi.client.youtube.channels.list({ 
+      part: 'snippet', 
+      mine: true 
     });
 
-    if (!response.result.items || response.result.items.length === 0) {
-      showError("Nenhum canal do YouTube encontrado nesta conta Google.");
-      return;
+    if (response.result.items && response.result.items.length > 0) {
+      const channel = response.result.items[0];
+      const channelId = channel.id;
+      const channelName = channel.snippet.title;
+
+      // Verificar se o canal já existe
+      const canalExistente = await db.collection('usuarios')
+        .doc(AppState.currentUser.uid)
+        .collection('canais')
+        .doc(channelId)
+        .get();
+
+      if (canalExistente.exists) {
+        showError(`O canal "${channelName}" já está adicionado.`);
+        closeModal('channel-modal');
+        return;
+      }
+
+      await db.collection('usuarios')
+        .doc(AppState.currentUser.uid)
+        .collection('canais')
+        .doc(channelId)
+        .set({
+          nome: channelName,
+          dataCriacao: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+      showSuccess(`Canal "${channelName}" adicionado com sucesso!`);
+      closeModal('channel-modal');
+      carregarCanais();
+    } else {
+      showError("Nenhum canal do YouTube encontrado para esta conta Google.");
     }
-
-    const channel = response.result.items[0];
-    const channelId = channel.id;
-    const channelName = channel.snippet.title;
-
-    // Verifica se o canal já existe
-    const existingChannel = await AppState.db
-      .collection('usuarios')
-      .doc(AppState.currentUser.uid)
-      .collection('canais')
-      .doc(channelId)
-      .get();
-
-    if (existingChannel.exists) {
-      showError(`O canal "${channelName}" já está adicionado.`);
-      return;
-    }
-
-    // Adiciona o canal
-    await AppState.db
-      .collection('usuarios')
-      .doc(AppState.currentUser.uid)
-      .collection('canais')
-      .doc(channelId)
-      .set({
-        nome: channelName,
-        dataCriacao: firebase.firestore.FieldValue.serverTimestamp()
-      });
-
-    showSuccess(`Canal "${channelName}" adicionado com sucesso!`);
-    closeModal('channel-modal');
-    loadChannels();
   } catch (error) {
-    console.error("Erro ao buscar canal:", error);
-    showError("Erro ao adicionar o canal. Tente novamente.");
+    console.error("Erro ao buscar informações do canal:", error);
+    showError("Ocorreu um erro ao adicionar o canal.");
   } finally {
     gapi.client.setToken(null);
   }
 }
 
-window.deleteChannel = async function(channelId) {
-  if (!confirm("Tem certeza que deseja excluir este canal e todos os seus dados?")) {
-    return;
-  }
-
-  try {
-    await AppState.db
-      .collection('usuarios')
-      .doc(AppState.currentUser.uid)
-      .collection('canais')
-      .doc(channelId)
-      .delete();
-
-    showSuccess("Canal excluído com sucesso.");
-    loadChannels();
-  } catch (error) {
-    console.error("Erro ao excluir canal:", error);
-    showError("Erro ao excluir o canal.");
-  }
-};
-
-window.enterChannel = function(channelId, channelName) {
-  AppState.currentChannel = { id: channelId, name: channelName };
-  
-  const titleElement = document.getElementById('channel-management-title');
-  if (titleElement) {
-    titleElement.textContent = `Gerenciando: ${channelName}`;
-  }
-  
-  showPage('channel-management');
-  showSubpage('biblioteca');
-};
-
 // ===================================================================
-// FUNÇÕES DE BIBLIOTECA (UPLOAD/DOWNLOAD)
+// FUNÇÕES DE BIBLIOTECA
 // ===================================================================
 
-async function handleFileUpload(event, folder) {
+function handleFileUpload(event) {
   const files = event.target.files;
-  if (!files || files.length === 0) return;
-  if (!AppState.currentChannel || !AppState.currentUser) {
-    showError("Nenhum canal selecionado.");
-    return;
-  }
+  if (!files.length || !AppState.canalAtual || !AppState.currentUser) return;
 
-  const uploadPromises = [];
-  
-  for (const file of files) {
-    // Validação do arquivo
-    if (folder === 'videos') {
-      if (!file.type.startsWith('video/')) {
-        showError(`${file.name} não é um arquivo de vídeo válido.`);
-        continue;
-      }
-    } else if (folder === 'thumbnails') {
-      if (!file.type.startsWith('image/')) {
-        showError(`${file.name} não é uma imagem válida.`);
-        continue;
-      }
-    }
+  const isVideo = event.target.id === 'video-file-input';
+  const folder = isVideo ? 'videos' : 'thumbnails';
+  const tiposAceitos = isVideo ? ['video'] : ['image'];
 
-    const filePath = `${AppState.currentUser.uid}/${AppState.currentChannel.id}/${folder}/${file.name}`;
-    const uploadTask = AppState.storage.ref(filePath).put(file);
-
-    const promise = new Promise((resolve, reject) => {
-      uploadTask.on('state_changed',
-        (snapshot) => {
-          const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-          console.log(`Upload de ${file.name}: ${progress.toFixed(0)}%`);
-        },
-        (error) => {
-          console.error(`Erro no upload de ${file.name}:`, error);
-          showError(`Erro ao enviar ${file.name}.`);
-          reject(error);
-        },
-        () => {
-          console.log(`${file.name} enviado com sucesso.`);
-          resolve();
-        }
-      );
-    });
-
-    uploadPromises.push(promise);
-  }
-
-  try {
-    await Promise.all(uploadPromises);
-    showSuccess(`${files.length} arquivo(s) enviado(s) com sucesso!`);
-    loadMedia();
-  } catch (error) {
-    console.error("Erro em alguns uploads:", error);
-  }
-
-  // Limpa o input
-  event.target.value = '';
-}
-
-async function loadMedia() {
-  if (!AppState.currentUser || !AppState.currentChannel) return;
-  
-  await loadFilesFromFolder('videos');
-  await loadFilesFromFolder('thumbnails');
-}
-
-async function loadFilesFromFolder(folder) {
-  const tableBody = document.querySelector(`#${folder}-table tbody`);
-  if (!tableBody) return;
-  
-  tableBody.innerHTML = '<tr><td colspan="3">Carregando...</td></tr>';
-  
-  const folderPath = `${AppState.currentUser.uid}/${AppState.currentChannel.id}/${folder}/`;
-
-  try {
-    const result = await AppState.storage.ref(folderPath).listAll();
-    
-    if (result.items.length === 0) {
-      tableBody.innerHTML = '<tr><td colspan="3">Nenhum arquivo encontrado.</td></tr>';
+  Array.from(files).forEach(file => {
+    // Validar tipo de arquivo
+    if (!validarArquivo(file, tiposAceitos)) {
+      showError(`Arquivo "${file.name}" não é um ${isVideo ? 'vídeo' : 'imagem'} válido.`);
       return;
     }
 
+    const filePath = `${AppState.currentUser.uid}/${AppState.canalAtual.docId}/${folder}/${file.name}`;
+    const uploadTask = storage.ref(filePath).put(file);
+
+    uploadTask.on('state_changed',
+      (snapshot) => {
+        const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+        console.log(`Upload ${file.name}: ${progress.toFixed(0)}%`);
+      },
+      (error) => {
+        console.error(`Erro no upload de ${file.name}:`, error);
+        showError(`Erro ao enviar ${file.name}.`);
+      },
+      () => {
+        console.log(`✅ ${file.name} enviado com sucesso.`);
+        carregarMidias();
+      }
+    );
+  });
+
+  // Limpar input
+  event.target.value = '';
+}
+
+async function carregarMidias() {
+  if (!AppState.currentUser || !AppState.canalAtual) return;
+  await carregarArquivosDaPasta('videos');
+  await carregarArquivosDaPasta('thumbnails');
+}
+
+async function carregarArquivosDaPasta(folder) {
+  const tableBody = document.getElementById(`${folder}-table`)?.querySelector('tbody');
+  if (!tableBody) return;
+  
+  tableBody.innerHTML = `<tr><td colspan="3">Carregando...</td></tr>`;
+  
+  const folderPath = `${AppState.currentUser.uid}/${AppState.canalAtual.docId}/${folder}/`;
+
+  try {
+    const res = await storage.ref(folderPath).listAll();
+    
+    if (res.items.length === 0) {
+      tableBody.innerHTML = `<tr><td colspan="3">Nenhum arquivo encontrado.</td></tr>`;
+      return;
+    }
+    
     let html = '';
-    for (const itemRef of result.items) {
-      const fileName = escapeHtml(itemRef.name);
-      const fullPath = itemRef.fullPath;
-      
+    for (const itemRef of res.items) {
+      const nomeArquivo = escapeHtml(itemRef.name);
       html += `
         <tr>
-          <td>${fileName}</td>
+          <td>${nomeArquivo}</td>
           <td><span class="status-badge uploaded">Carregado</span></td>
           <td class="actions">
-            <button class="btn-icon" onclick="window.deleteMedia('${fullPath}')">
+            <button class="btn-icon" onclick="excluirMidia('${escapeHtml(itemRef.fullPath)}')">
               <i data-feather="trash-2"></i>
             </button>
           </td>
@@ -638,32 +647,17 @@ async function loadFilesFromFolder(folder) {
     if (typeof feather !== 'undefined') feather.replace();
   } catch (error) {
     console.error(`Erro ao listar ${folder}:`, error);
-    tableBody.innerHTML = '<tr><td colspan="3">Erro ao carregar arquivos.</td></tr>';
+    tableBody.innerHTML = `<tr><td colspan="3">Erro ao carregar arquivos.</td></tr>`;
   }
 }
-
-window.deleteMedia = async function(fullPath) {
-  if (!confirm("Tem certeza que deseja excluir este arquivo?")) {
-    return;
-  }
-
-  try {
-    await AppState.storage.ref(fullPath).delete();
-    showSuccess("Arquivo excluído com sucesso.");
-    loadMedia();
-  } catch (error) {
-    console.error("Erro ao excluir mídia:", error);
-    showError("Erro ao excluir o arquivo.");
-  }
-};
 
 // ===================================================================
 // FUNÇÕES DE AGENDAMENTO
 // ===================================================================
 
-function downloadCsvTemplate() {
+function baixarModeloCSV() {
   const header = "nome_video,nome_thumbnail,titulo,descricao,tags,data_publicacao,hora_publicacao";
-  const exemplo = "video_exemplo.mp4,thumb_exemplo.jpg,Meu Título Incrível,Descrição detalhada do vídeo.,tag1|tag2|tag3,2025-12-31,18:00";
+  const exemplo = "video_exemplo.mp4,thumb_exemplo.jpg,Meu Título Incrível,Descrição detalhada do vídeo.,tag1;tag2;tag3,2025-12-31,18:00";
   const csv = `${header}\n${exemplo}`;
   
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -678,30 +672,32 @@ function downloadCsvTemplate() {
   link.click();
   document.body.removeChild(link);
   
+  // Limpar URL blob
   URL.revokeObjectURL(url);
 }
 
-async function handleCsvImport(event) {
+function handleCsvImport(event) {
   const file = event.target.files[0];
-  if (!file) return;
-  
-  if (!AppState.currentChannel) {
-    showError("Nenhum canal selecionado.");
+  if (!file || !AppState.canalAtual) return;
+
+  // Validar tipo de arquivo
+  if (!file.name.endsWith('.csv')) {
+    showError('Por favor, selecione um arquivo .CSV válido.');
+    event.target.value = '';
     return;
   }
 
   const statusBox = document.getElementById('csv-status');
   if (!statusBox) return;
 
-  const logStatus = (message, type = 'info') => {
+  const logCsvStatus = (message, type = 'info') => {
     statusBox.innerHTML = `<p class="${type}">${escapeHtml(message)}</p>`;
   };
 
-  logStatus('Lendo arquivo CSV...');
-
-  // Verifica se Papa está disponível
+  logCsvStatus('Lendo arquivo CSV...');
+  
   if (typeof Papa === 'undefined') {
-    logStatus('Biblioteca PapaParse não encontrada. Recarregue a página.', 'error');
+    logCsvStatus('ERRO: Biblioteca PapaParse não carregada.', 'error');
     return;
   }
 
@@ -709,119 +705,242 @@ async function handleCsvImport(event) {
     header: true,
     skipEmptyLines: true,
     complete: async (results) => {
-      if (!results.data || results.data.length === 0) {
-        logStatus('Arquivo CSV vazio ou inválido.', 'error');
-        return;
-      }
-
-      logStatus(`Arquivo lido. ${results.data.length} registro(s) encontrado(s). Salvando...`);
-
-      const batch = AppState.db.batch();
-      let validCount = 0;
-
-      results.data.forEach(row => {
-        // Valida dados obrigatórios
-        if (!row.nome_video || !row.titulo || !row.data_publicacao || !row.hora_publicacao) {
-          console.warn("Linha inválida ignorada:", row);
+      try {
+        if (!results.data || results.data.length === 0) {
+          logCsvStatus('Nenhum dado encontrado no arquivo CSV.', 'error');
           return;
         }
 
-        try {
-          const dataHora = `${row.data_publicacao}T${row.hora_publicacao}:00`;
-          const date = new Date(dataHora);
-          
-          if (isNaN(date.getTime())) {
-            console.warn("Data/hora inválida:", row);
-            return;
+        logCsvStatus(`Arquivo lido. ${results.data.length} registros encontrados. Validando...`);
+
+        // Filtrar linhas válidas
+        const linhasValidas = results.data.filter((row, index) => {
+          if (!row.data_publicacao || !row.hora_publicacao) {
+            console.warn(`Linha ${index + 1} ignorada: faltam data/hora`);
+            return false;
           }
+          
+          try {
+            const dataHora = `${row.data_publicacao}T${row.hora_publicacao}:00`;
+            const date = new Date(dataHora);
+            if (isNaN(date.getTime())) {
+              console.warn(`Linha ${index + 1} ignorada: data/hora inválida`);
+              return false;
+            }
+          } catch (error) {
+            console.warn(`Linha ${index + 1} ignorada: erro ao processar data/hora`);
+            return false;
+          }
+          
+          return true;
+        });
 
-          const dataHoraTimestamp = firebase.firestore.Timestamp.fromDate(date);
-          const agendamentoRef = AppState.db.collection('agendamentos').doc();
-          
-          batch.set(agendamentoRef, {
-            canalId: AppState.currentChannel.id,
-            nome_video: row.nome_video.trim(),
-            nome_thumbnail: row.nome_thumbnail ? row.nome_thumbnail.trim() : '',
-            titulo: row.titulo.trim(),
-            descricao: row.descricao ? row.descricao.trim() : '',
-            tags: row.tags ? row.tags.trim() : '',
-            dataHoraPublicacao: dataHoraTimestamp,
-            status: 'Agendado',
-            criadoEm: firebase.firestore.FieldValue.serverTimestamp()
-          });
-          
-          validCount++;
-        } catch (error) {
-          console.warn("Erro ao processar linha:", row, error);
+        if (linhasValidas.length === 0) {
+          logCsvStatus('Nenhuma linha válida encontrada no CSV.', 'error');
+          return;
         }
-      });
 
-      if (validCount === 0) {
-        logStatus('Nenhum registro válido encontrado no CSV.', 'error');
-        return;
-      }
+        logCsvStatus(`${linhasValidas.length} linhas válidas. Salvando no banco...`);
 
-      try {
+        const batch = db.batch();
+        linhasValidas.forEach(row => {
+          const dataHora = `${row.data_publicacao}T${row.hora_publicacao}:00`;
+          const dataHoraTimestamp = firebase.firestore.Timestamp.fromDate(new Date(dataHora));
+
+          const agendamentoRef = db.collection('agendamentos').doc();
+          batch.set(agendamentoRef, {
+            canalId: AppState.canalAtual.docId,
+            nome_video: row.nome_video || '',
+            nome_thumbnail: row.nome_thumbnail || '',
+            titulo: row.titulo || '',
+            descricao: row.descricao || '',
+            tags: row.tags || '',
+            dataHoraPublicacao: dataHoraTimestamp,
+            status: 'Agendado'
+          });
+        });
+
         await batch.commit();
-        logStatus(`${validCount} agendamento(s) importado(s) com sucesso!`, 'success');
-        renderSchedules();
+        logCsvStatus(`${linhasValidas.length} agendamentos importados com sucesso!`, 'success');
+        renderizarAgendamentos();
       } catch (error) {
-        console.error("Erro ao salvar agendamentos:", error);
-        logStatus('Erro ao salvar no banco de dados.', 'error');
+        console.error("Erro ao processar CSV:", error);
+        logCsvStatus(`ERRO ao salvar no banco de dados: ${error.message}`, 'error');
       }
     },
     error: (error) => {
       console.error("Erro ao parsear CSV:", error);
-      logStatus('Erro ao ler o arquivo CSV.', 'error');
+      logCsvStatus(`ERRO: Não foi possível ler o arquivo CSV.`, 'error');
     }
   });
 
-  // Limpa o input
+  // Limpar input
   event.target.value = '';
 }
 
-async function renderSchedules() {
-  if (!AppState.currentUser || !AppState.currentChannel) return;
+async function renderizarAgendamentos() {
+  if (!AppState.currentUser || !AppState.canalAtual) return;
   
-  const tableBody = document.querySelector('#schedules-table tbody');
+  const tableBody = document.getElementById('schedules-table')?.querySelector('tbody');
   if (!tableBody) return;
   
   tableBody.innerHTML = '<tr><td colspan="4">Carregando agendamentos...</td></tr>';
 
   try {
-    const snapshot = await AppState.db
-      .collection('agendamentos')
-      .where('canalId', '==', AppState.currentChannel.id)
+    const snapshot = await db.collection('agendamentos')
+      .where('canalId', '==', AppState.canalAtual.docId)
       .orderBy('dataHoraPublicacao', 'asc')
       .get();
 
-    AppState.schedulesCache = snapshot.docs.map(doc => ({
-      docId: doc.id,
-      ...doc.data()
+    AppState.agendamentosCache = snapshot.docs.map(doc => ({ 
+      docId: doc.id, 
+      ...doc.data() 
     }));
 
-    if (AppState.schedulesCache.length === 0) {
+    if (AppState.agendamentosCache.length === 0) {
       tableBody.innerHTML = '<tr><td colspan="4">Nenhum agendamento na fila.</td></tr>';
       return;
     }
 
     let html = '';
-    AppState.schedulesCache.forEach(schedule => {
-      const date = schedule.dataHoraPublicacao.toDate();
-      const formattedDate = date.toLocaleDateString('pt-BR') + ' ' + 
-                           date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-      const titulo = escapeHtml(schedule.titulo);
+    AppState.agendamentosCache.forEach(agendamento => {
+      const data = agendamento.dataHoraPublicacao.toDate();
+      const dataFormatada = data.toLocaleDateString('pt-BR') + ' ' + 
+        data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+      
+      const titulo = escapeHtml(agendamento.titulo);
+      const status = escapeHtml(agendamento.status);
       
       html += `
-        <tr data-id="${schedule.docId}">
+        <tr data-id="${escapeHtml(agendamento.docId)}">
           <td>${titulo}</td>
-          <td>${formattedDate}</td>
-          <td><span class="status-badge scheduled">${escapeHtml(schedule.status)}</span></td>
+          <td>${dataFormatada}</td>
+          <td><span class="status-badge scheduled">${status}</span></td>
           <td class="actions">
-            <button class="btn-icon" onclick="window.openScheduleEditModal('${schedule.docId}')">
+            <button class="btn-icon" onclick="abrirModalEdicao('${escapeHtml(agendamento.docId)}')">
               <i data-feather="edit"></i>
             </button>
-            <button class="btn-icon" onclick="window.deleteSchedule('${schedule.docId}')">
+            <button class="btn-icon" onclick="excluirAgendamento('${escapeHtml(agendamento.docId)}')">
               <i data-feather="trash-2"></i>
             </button>
           </td>
+        </tr>
+      `;
+    });
+    
+    tableBody.innerHTML = html;
+    if (typeof feather !== 'undefined') feather.replace();
+  } catch (error) {
+    console.error("Erro ao renderizar agendamentos:", error);
+    tableBody.innerHTML = `<tr><td colspan="4">Erro ao carregar agendamentos.</td></tr>`;
+  }
+}
+
+async function handleScheduleEdit(e) {
+  e.preventDefault();
+  
+  const docIdInput = document.getElementById('schedule-id-input');
+  if (!docIdInput) return;
+  
+  const docId = docIdInput.value;
+  if (!docId) return;
+
+  // Coletar dados do formulário
+  const campos = {
+    nome_video: document.getElementById('schedule-nome-video')?.value || '',
+    nome_thumbnail: document.getElementById('schedule-nome-thumbnail')?.value || '',
+    titulo: document.getElementById('schedule-titulo')?.value || '',
+    descricao: document.getElementById('schedule-descricao')?.value || '',
+    tags: document.getElementById('schedule-tags')?.value || '',
+    data: document.getElementById('schedule-data-publicacao')?.value,
+    hora: document.getElementById('schedule-hora-publicacao')?.value
+  };
+
+  // Validar campos obrigatórios
+  if (!campos.titulo) {
+    showError('O título do vídeo é obrigatório.');
+    return;
+  }
+
+  if (!campos.data || !campos.hora) {
+    showError('Data e hora de publicação são obrigatórias.');
+    return;
+  }
+
+  // Validar data/hora
+  try {
+    const dataHora = `${campos.data}T${campos.hora}:00`;
+    const date = new Date(dataHora);
+    
+    if (isNaN(date.getTime())) {
+      showError('Data ou hora inválida.');
+      return;
+    }
+
+    const dataHoraTimestamp = firebase.firestore.Timestamp.fromDate(date);
+
+    const dadosAtualizados = {
+      nome_video: campos.nome_video,
+      nome_thumbnail: campos.nome_thumbnail,
+      titulo: campos.titulo,
+      descricao: campos.descricao,
+      tags: campos.tags,
+      dataHoraPublicacao: dataHoraTimestamp
+    };
+
+    await db.collection('agendamentos').doc(docId).update(dadosAtualizados);
+    showSuccess("Agendamento atualizado com sucesso!");
+    closeModal('schedule-modal');
+    renderizarAgendamentos();
+  } catch (error) {
+    console.error("Erro ao salvar alterações:", error);
+    showError("Não foi possível salvar as alterações.");
+  }
+}
+
+async function limparTodosAgendamentos() {
+  if (!AppState.canalAtual || AppState.agendamentosCache.length === 0) {
+    showError("Não há agendamentos para limpar.");
+    return;
+  }
+  
+  if (!confirm(`Tem certeza que deseja excluir TODOS os ${AppState.agendamentosCache.length} agendamentos deste canal?`)) {
+    return;
+  }
+
+  try {
+    const batch = db.batch();
+    
+    AppState.agendamentosCache.forEach(agendamento => {
+      const docRef = db.collection('agendamentos').doc(agendamento.docId);
+      batch.delete(docRef);
+    });
+
+    await batch.commit();
+    showSuccess("Todos os agendamentos foram excluídos com sucesso.");
+    renderizarAgendamentos();
+  } catch (error) {
+    console.error("Erro ao limpar agendamentos:", error);
+    showError("Ocorreu um erro ao limpar a fila.");
+  }
+}
+
+// ===================================================================
+// FUNÇÕES DE MODAL
+// ===================================================================
+
+function openModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) modal.style.display = 'flex';
+}
+
+// ===================================================================
+// LOG DE INICIALIZAÇÃO
+// ===================================================================
+
+console.log(`
+╔════════════════════════════════════════╗
+║   🎬 AUTOPOST YOUTUBE DASHBOARD       ║
+║   ✅ Sistema inicializado              ║
+╚════════════════════════════════════════╝
+`);
