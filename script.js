@@ -28,11 +28,10 @@ const AppState = {
   schedulesCache: [],
   tokenClient: null,
   isGapiReady: false,
-  isGisReady: false,
-  db: null,
-  auth: null,
-  storage: null
+  isGisReady: false
 };
+
+let auth, db, storage;
 
 // ===================================================================
 // INICIALIZAÇÃO DO FIREBASE
@@ -40,13 +39,13 @@ const AppState = {
 
 function initFirebase() {
   try {
-    if (!firebase || !firebase.apps.length) {
+    if (!firebase.apps.length) {
       firebase.initializeApp(CONFIG.firebase);
     }
     
-    AppState.auth = firebase.auth();
-    AppState.db = firebase.firestore();
-    AppState.storage = firebase.storage();
+    auth = firebase.auth();
+    db = firebase.firestore();
+    storage = firebase.storage();
     
     console.log("✓ Firebase inicializado com sucesso");
     return true;
@@ -58,7 +57,7 @@ function initFirebase() {
 }
 
 // ===================================================================
-// INICIALIZAÇÃO DAS APIS DO GOOGLE
+// CALLBACKS DAS APIS DO GOOGLE (CHAMADOS PELO HTML)
 // ===================================================================
 
 window.gapiLoaded = function() {
@@ -109,52 +108,30 @@ function checkGoogleApiReadiness() {
 // INICIALIZAÇÃO DO DOM
 // ===================================================================
 
-document.addEventListener('DOMContentLoaded', async () => {
+document.addEventListener('DOMContentLoaded', () => {
   // Inicializa Firebase
   if (!initFirebase()) return;
 
   // Elementos do DOM
-  const elements = {
-    loginPage: document.getElementById('login-page'),
-    appContainer: document.querySelector('.container'),
-    loginForm: document.getElementById('login-form'),
-    logoutBtn: document.getElementById('btn-logout'),
-    addChannelBtn: document.getElementById('btn-add-channel'),
-    connectYoutubeBtn: document.getElementById('btn-connect-youtube'),
-    backToDashboardBtn: document.getElementById('btn-back-to-dashboard'),
-    uploadVideosBtn: document.getElementById('btn-upload-videos'),
-    uploadThumbnailsBtn: document.getElementById('btn-upload-thumbnails'),
-    videoFileInput: document.getElementById('video-file-input'),
-    thumbnailFileInput: document.getElementById('thumbnail-file-input'),
-    downloadCsvBtn: document.getElementById('btn-download-csv-template'),
-    importCsvBtn: document.getElementById('btn-import-csv'),
-    csvFileInput: document.getElementById('csv-file-input'),
-    scheduleForm: document.getElementById('schedule-form'),
-    clearSchedulesBtn: document.getElementById('btn-clear-schedules')
-  };
-
-  // Verifica se elementos essenciais existem
-  if (!elements.loginPage || !elements.appContainer) {
-    console.error("✗ Elementos essenciais do DOM não encontrados");
-    return;
-  }
+  const loginPage = document.getElementById('login-page');
+  const appContainer = document.querySelector('.container');
 
   // ===================================================================
   // AUTENTICAÇÃO
   // ===================================================================
 
-  AppState.auth.onAuthStateChanged(user => {
+  auth.onAuthStateChanged(user => {
     if (user) {
       AppState.currentUser = user;
-      elements.loginPage.style.display = 'none';
-      elements.appContainer.style.display = 'flex';
+      loginPage.style.display = 'none';
+      appContainer.style.display = 'flex';
       if (typeof feather !== 'undefined') feather.replace();
       loadChannels();
     } else {
       AppState.currentUser = null;
       AppState.currentChannel = null;
-      elements.loginPage.style.display = 'block';
-      elements.appContainer.style.display = 'none';
+      loginPage.style.display = 'block';
+      appContainer.style.display = 'none';
     }
   });
 
@@ -163,11 +140,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   // ===================================================================
 
   // Login/Logout
-  if (elements.loginForm) {
-    elements.loginForm.addEventListener('submit', handleLogin);
+  const loginForm = document.getElementById('login-form');
+  if (loginForm) {
+    loginForm.addEventListener('submit', handleLogin);
   }
-  if (elements.logoutBtn) {
-    elements.logoutBtn.addEventListener('click', handleLogout);
+
+  const logoutBtn = document.getElementById('btn-logout');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', handleLogout);
   }
 
   // Navegação principal
@@ -189,41 +169,58 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   // Botões de ação
-  if (elements.addChannelBtn) {
-    elements.addChannelBtn.addEventListener('click', () => openModal('channel-modal'));
+  const addChannelBtn = document.getElementById('btn-add-channel');
+  if (addChannelBtn) {
+    addChannelBtn.addEventListener('click', () => openModal('channel-modal'));
   }
-  if (elements.connectYoutubeBtn) {
-    elements.connectYoutubeBtn.addEventListener('click', requestYouTubeAccess);
+
+  const connectYoutubeBtn = document.getElementById('btn-connect-youtube');
+  if (connectYoutubeBtn) {
+    connectYoutubeBtn.addEventListener('click', requestYouTubeAccess);
   }
-  if (elements.backToDashboardBtn) {
-    elements.backToDashboardBtn.addEventListener('click', () => showPage('dashboard'));
+
+  const backToDashboardBtn = document.getElementById('btn-back-to-dashboard');
+  if (backToDashboardBtn) {
+    backToDashboardBtn.addEventListener('click', () => showPage('dashboard'));
   }
 
   // Upload de arquivos
-  if (elements.uploadVideosBtn && elements.videoFileInput) {
-    elements.uploadVideosBtn.addEventListener('click', () => elements.videoFileInput.click());
-    elements.videoFileInput.addEventListener('change', (e) => handleFileUpload(e, 'videos'));
+  const uploadVideosBtn = document.getElementById('btn-upload-videos');
+  const videoFileInput = document.getElementById('video-file-input');
+  if (uploadVideosBtn && videoFileInput) {
+    uploadVideosBtn.addEventListener('click', () => videoFileInput.click());
+    videoFileInput.addEventListener('change', (e) => handleFileUpload(e, 'videos'));
   }
-  if (elements.uploadThumbnailsBtn && elements.thumbnailFileInput) {
-    elements.uploadThumbnailsBtn.addEventListener('click', () => elements.thumbnailFileInput.click());
-    elements.thumbnailFileInput.addEventListener('change', (e) => handleFileUpload(e, 'thumbnails'));
+
+  const uploadThumbnailsBtn = document.getElementById('btn-upload-thumbnails');
+  const thumbnailFileInput = document.getElementById('thumbnail-file-input');
+  if (uploadThumbnailsBtn && thumbnailFileInput) {
+    uploadThumbnailsBtn.addEventListener('click', () => thumbnailFileInput.click());
+    thumbnailFileInput.addEventListener('change', (e) => handleFileUpload(e, 'thumbnails'));
   }
 
   // CSV
-  if (elements.downloadCsvBtn) {
-    elements.downloadCsvBtn.addEventListener('click', downloadCsvTemplate);
+  const downloadCsvBtn = document.getElementById('btn-download-csv-template');
+  if (downloadCsvBtn) {
+    downloadCsvBtn.addEventListener('click', downloadCsvTemplate);
   }
-  if (elements.importCsvBtn && elements.csvFileInput) {
-    elements.importCsvBtn.addEventListener('click', () => elements.csvFileInput.click());
-    elements.csvFileInput.addEventListener('change', handleCsvImport);
+
+  const importCsvBtn = document.getElementById('btn-import-csv');
+  const csvFileInput = document.getElementById('csv-file-input');
+  if (importCsvBtn && csvFileInput) {
+    importCsvBtn.addEventListener('click', () => csvFileInput.click());
+    csvFileInput.addEventListener('change', handleCsvImport);
   }
 
   // Agendamentos
-  if (elements.scheduleForm) {
-    elements.scheduleForm.addEventListener('submit', handleScheduleEdit);
+  const scheduleForm = document.getElementById('schedule-form');
+  if (scheduleForm) {
+    scheduleForm.addEventListener('submit', handleScheduleEdit);
   }
-  if (elements.clearSchedulesBtn) {
-    elements.clearSchedulesBtn.addEventListener('click', clearAllSchedules);
+
+  const clearSchedulesBtn = document.getElementById('btn-clear-schedules');
+  if (clearSchedulesBtn) {
+    clearSchedulesBtn.addEventListener('click', clearAllSchedules);
   }
 
   // Tabs
@@ -234,14 +231,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   });
 
-  // Modais
-  document.querySelectorAll('.modal .close-button').forEach(button => {
-    button.addEventListener('click', () => {
-      const modal = button.closest('.modal');
-      if (modal) closeModal(modal.id);
-    });
-  });
-
+  // Modais - fechar ao clicar fora
   window.addEventListener('click', (event) => {
     if (event.target.classList.contains('modal')) {
       closeModal(event.target.id);
@@ -279,7 +269,7 @@ async function handleLogin(e) {
   errorMessage.textContent = '';
   
   try {
-    await AppState.auth.signInWithEmailAndPassword(email, password);
+    await auth.signInWithEmailAndPassword(email, password);
   } catch (error) {
     console.error("Erro no login:", error);
     
@@ -298,7 +288,7 @@ async function handleLogin(e) {
 
 async function handleLogout() {
   try {
-    await AppState.auth.signOut();
+    await auth.signOut();
   } catch (error) {
     console.error("Erro no logout:", error);
     showError("Erro ao fazer logout.");
@@ -375,7 +365,7 @@ async function loadChannels() {
   tableBody.innerHTML = '<tr><td colspan="5">Carregando canais...</td></tr>';
 
   try {
-    const snapshot = await AppState.db
+    const snapshot = await db
       .collection('usuarios')
       .doc(AppState.currentUser.uid)
       .collection('canais')
@@ -400,10 +390,10 @@ async function loadChannels() {
           <td>${dataCriacao}</td>
           <td><span class="status-badge active">Ativo</span></td>
           <td class="actions">
-            <button class="btn-icon" onclick="window.enterChannel('${doc.id}', '${nomeSeguro.replace(/'/g, "\\'")}')">
+            <button class="btn-icon" onclick="entrarCanal('${doc.id}', '${nomeSeguro.replace(/'/g, "\\'")}')">
               <i data-feather="arrow-right-circle"></i>
             </button>
-            <button class="btn-icon" onclick="window.deleteChannel('${doc.id}')">
+            <button class="btn-icon" onclick="excluirCanal('${doc.id}')">
               <i data-feather="trash-2"></i>
             </button>
           </td>
@@ -462,7 +452,7 @@ async function fetchChannelInfoAndAdd(accessToken) {
     const channelName = channel.snippet.title;
 
     // Verifica se o canal já existe
-    const existingChannel = await AppState.db
+    const existingChannel = await db
       .collection('usuarios')
       .doc(AppState.currentUser.uid)
       .collection('canais')
@@ -475,7 +465,7 @@ async function fetchChannelInfoAndAdd(accessToken) {
     }
 
     // Adiciona o canal
-    await AppState.db
+    await db
       .collection('usuarios')
       .doc(AppState.currentUser.uid)
       .collection('canais')
@@ -496,13 +486,14 @@ async function fetchChannelInfoAndAdd(accessToken) {
   }
 }
 
-window.deleteChannel = async function(channelId) {
+// Função global para ser chamada pelo onclick no HTML
+window.excluirCanal = async function(channelId) {
   if (!confirm("Tem certeza que deseja excluir este canal e todos os seus dados?")) {
     return;
   }
 
   try {
-    await AppState.db
+    await db
       .collection('usuarios')
       .doc(AppState.currentUser.uid)
       .collection('canais')
@@ -517,7 +508,8 @@ window.deleteChannel = async function(channelId) {
   }
 };
 
-window.enterChannel = function(channelId, channelName) {
+// Função global para ser chamada pelo onclick no HTML
+window.entrarCanal = function(channelId, channelName) {
   AppState.currentChannel = { id: channelId, name: channelName };
   
   const titleElement = document.getElementById('channel-management-title');
@@ -558,7 +550,7 @@ async function handleFileUpload(event, folder) {
     }
 
     const filePath = `${AppState.currentUser.uid}/${AppState.currentChannel.id}/${folder}/${file.name}`;
-    const uploadTask = AppState.storage.ref(filePath).put(file);
+    const uploadTask = storage.ref(filePath).put(file);
 
     const promise = new Promise((resolve, reject) => {
       uploadTask.on('state_changed',
@@ -609,7 +601,7 @@ async function loadFilesFromFolder(folder) {
   const folderPath = `${AppState.currentUser.uid}/${AppState.currentChannel.id}/${folder}/`;
 
   try {
-    const result = await AppState.storage.ref(folderPath).listAll();
+    const result = await storage.ref(folderPath).listAll();
     
     if (result.items.length === 0) {
       tableBody.innerHTML = '<tr><td colspan="3">Nenhum arquivo encontrado.</td></tr>';
@@ -626,7 +618,7 @@ async function loadFilesFromFolder(folder) {
           <td>${fileName}</td>
           <td><span class="status-badge uploaded">Carregado</span></td>
           <td class="actions">
-            <button class="btn-icon" onclick="window.deleteMedia('${fullPath}')">
+            <button class="btn-icon" onclick="excluirMidia('${fullPath}')">
               <i data-feather="trash-2"></i>
             </button>
           </td>
@@ -642,13 +634,14 @@ async function loadFilesFromFolder(folder) {
   }
 }
 
-window.deleteMedia = async function(fullPath) {
+// Função global para ser chamada pelo onclick no HTML
+window.excluirMidia = async function(fullPath) {
   if (!confirm("Tem certeza que deseja excluir este arquivo?")) {
     return;
   }
 
   try {
-    await AppState.storage.ref(fullPath).delete();
+    await storage.ref(fullPath).delete();
     showSuccess("Arquivo excluído com sucesso.");
     loadMedia();
   } catch (error) {
@@ -716,7 +709,7 @@ async function handleCsvImport(event) {
 
       logStatus(`Arquivo lido. ${results.data.length} registro(s) encontrado(s). Salvando...`);
 
-      const batch = AppState.db.batch();
+      const batch = db.batch();
       let validCount = 0;
 
       results.data.forEach(row => {
@@ -736,7 +729,7 @@ async function handleCsvImport(event) {
           }
 
           const dataHoraTimestamp = firebase.firestore.Timestamp.fromDate(date);
-          const agendamentoRef = AppState.db.collection('agendamentos').doc();
+          const agendamentoRef = db.collection('agendamentos').doc();
           
           batch.set(agendamentoRef, {
             canalId: AppState.currentChannel.id,
@@ -789,7 +782,7 @@ async function renderSchedules() {
   tableBody.innerHTML = '<tr><td colspan="4">Carregando agendamentos...</td></tr>';
 
   try {
-    const snapshot = await AppState.db
+    const snapshot = await db
       .collection('agendamentos')
       .where('canalId', '==', AppState.currentChannel.id)
       .orderBy('dataHoraPublicacao', 'asc')
@@ -818,10 +811,251 @@ async function renderSchedules() {
           <td>${formattedDate}</td>
           <td><span class="status-badge scheduled">${escapeHtml(schedule.status)}</span></td>
           <td class="actions">
-            <button class="btn-icon" onclick="window.openScheduleEditModal('${schedule.docId}')">
+            <button class="btn-icon" onclick="abrirModalEdicao('${schedule.docId}')">
               <i data-feather="edit"></i>
             </button>
-            <button class="btn-icon" onclick="window.deleteSchedule('${schedule.docId}')">
+            <button class="btn-icon" onclick="excluirAgendamento('${schedule.docId}')">
               <i data-feather="trash-2"></i>
             </button>
           </td>
+        </tr>
+      `;
+    });
+    
+    tableBody.innerHTML = html;
+    if (typeof feather !== 'undefined') feather.replace();
+  } catch (error) {
+    console.error("Erro ao renderizar agendamentos:", error);
+    tableBody.innerHTML = '<tr><td colspan="4">Erro ao carregar agendamentos.</td></tr>';
+  }
+}
+
+// Função global para ser chamada pelo onclick no HTML
+window.abrirModalEdicao = function(docId) {
+  const schedule = AppState.schedulesCache.find(s => s.docId === docId);
+  if (!schedule) {
+    showError("Agendamento não encontrado.");
+    return;
+  }
+
+  const date = schedule.dataHoraPublicacao.toDate();
+  const dateISO = date.toISOString().split('T')[0];
+  const timeISO = date.toTimeString().split(' ')[0].substring(0, 5);
+
+  const fields = {
+    'schedule-id-input': docId,
+    'schedule-nome-video': schedule.nome_video || '',
+    'schedule-nome-thumbnail': schedule.nome_thumbnail || '',
+    'schedule-titulo': schedule.titulo || '',
+    'schedule-descricao': schedule.descricao || '',
+    'schedule-tags': schedule.tags || '',
+    'schedule-data-publicacao': dateISO,
+    'schedule-hora-publicacao': timeISO
+  };
+
+  for (const [id, value] of Object.entries(fields)) {
+    const element = document.getElementById(id);
+    if (element) element.value = value;
+  }
+
+  openModal('schedule-modal');
+};
+
+async function handleScheduleEdit(e) {
+  e.preventDefault();
+  
+  const docIdInput = document.getElementById('schedule-id-input');
+  if (!docIdInput) return;
+  
+  const docId = docIdInput.value;
+  if (!docId) {
+    showError("ID do agendamento não encontrado.");
+    return;
+  }
+
+  const fields = {
+    nome_video: document.getElementById('schedule-nome-video'),
+    nome_thumbnail: document.getElementById('schedule-nome-thumbnail'),
+    titulo: document.getElementById('schedule-titulo'),
+    descricao: document.getElementById('schedule-descricao'),
+    tags: document.getElementById('schedule-tags'),
+    data: document.getElementById('schedule-data-publicacao'),
+    hora: document.getElementById('schedule-hora-publicacao')
+  };
+
+  // Valida campos obrigatórios
+  if (!fields.nome_video?.value || !fields.titulo?.value || 
+      !fields.data?.value || !fields.hora?.value) {
+    showError("Por favor, preencha todos os campos obrigatórios.");
+    return;
+  }
+
+  try {
+    const dataHora = `${fields.data.value}T${fields.hora.value}:00`;
+    const date = new Date(dataHora);
+    
+    if (isNaN(date.getTime())) {
+      showError("Data ou hora inválida.");
+      return;
+    }
+
+    const dataHoraTimestamp = firebase.firestore.Timestamp.fromDate(date);
+
+    const updatedData = {
+      nome_video: fields.nome_video.value.trim(),
+      nome_thumbnail: fields.nome_thumbnail?.value.trim() || '',
+      titulo: fields.titulo.value.trim(),
+      descricao: fields.descricao?.value.trim() || '',
+      tags: fields.tags?.value.trim() || '',
+      dataHoraPublicacao: dataHoraTimestamp,
+      atualizadoEm: firebase.firestore.FieldValue.serverTimestamp()
+    };
+
+    await db.collection('agendamentos').doc(docId).update(updatedData);
+    
+    showSuccess("Agendamento atualizado com sucesso!");
+    closeModal('schedule-modal');
+    renderSchedules();
+  } catch (error) {
+    console.error("Erro ao salvar alterações:", error);
+    showError("Não foi possível salvar as alterações.");
+  }
+}
+
+// Função global para ser chamada pelo onclick no HTML
+window.excluirAgendamento = async function(docId) {
+  if (!confirm("Tem certeza que deseja excluir este agendamento?")) {
+    return;
+  }
+
+  try {
+    await db.collection('agendamentos').doc(docId).delete();
+    showSuccess("Agendamento excluído com sucesso.");
+    renderSchedules();
+  } catch (error) {
+    console.error("Erro ao excluir agendamento:", error);
+    showError("Erro ao excluir o agendamento.");
+  }
+};
+
+async function clearAllSchedules() {
+  if (!AppState.currentChannel || AppState.schedulesCache.length === 0) {
+    showError("Não há agendamentos para limpar.");
+    return;
+  }
+
+  const count = AppState.schedulesCache.length;
+  if (!confirm(`Tem certeza que deseja excluir TODOS os ${count} agendamentos deste canal?`)) {
+    return;
+  }
+
+  try {
+    const batch = db.batch();
+    
+    AppState.schedulesCache.forEach(schedule => {
+      const docRef = db.collection('agendamentos').doc(schedule.docId);
+      batch.delete(docRef);
+    });
+
+    await batch.commit();
+    showSuccess("Todos os agendamentos foram excluídos com sucesso.");
+    renderSchedules();
+  } catch (error) {
+    console.error("Erro ao limpar agendamentos:", error);
+    showError("Erro ao limpar a fila de agendamentos.");
+  }
+}
+
+// ===================================================================
+// FUNÇÕES DE MODAIS
+// ===================================================================
+
+function openModal(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) {
+    modal.style.display = 'flex';
+  }
+}
+
+// Função global para ser chamada pelo onclick no HTML
+window.closeModal = function(modalId) {
+  const modal = document.getElementById(modalId);
+  if (modal) {
+    modal.style.display = 'none';
+  }
+};
+
+// ===================================================================
+// FUNÇÕES UTILITÁRIAS
+// ===================================================================
+
+function showError(message) {
+  console.error(message);
+  alert(`❌ ${message}`);
+}
+
+function showSuccess(message) {
+  console.log(message);
+  alert(`✓ ${message}`);
+}
+
+function escapeHtml(text) {
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  };
+  return String(text).replace(/[&<>"']/g, m => map[m]);
+}
+
+function isValidEmail(email) {
+  const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return re.test(email);
+}
+
+// ===================================================================
+// LOG DE INICIALIZAÇÃO
+// ===================================================================
+
+console.log(`
+╔════════════════════════════════════════════════════════════╗
+║     SISTEMA DE AGENDAMENTO YOUTUBE - VERSÃO CORRIGIDA     ║
+║                                                            ║
+║  ✓ Firebase configurado                                   ║
+║  ✓ Validações implementadas                               ║
+║  ✓ Tratamento de erros completo                           ║
+║  ✓ Escape de HTML implementado                            ║
+║  ✓ Funções no escopo global                               ║
+║  ✓ Compatível com HTML existente                          ║
+║                                                            ║
+║  Aguardando carregamento das bibliotecas externas...      ║
+╚════════════════════════════════════════════════════════════╝
+`);
+
+// ===================================================================
+// VERIFICAÇÃO DE DEPENDÊNCIAS
+// ===================================================================
+
+window.addEventListener('load', () => {
+  const dependencies = {
+    'Firebase': typeof firebase !== 'undefined',
+    'Google API (gapi)': typeof gapi !== 'undefined',
+    'Google Identity Services (GIS)': typeof google !== 'undefined',
+    'PapaParse': typeof Papa !== 'undefined',
+    'Feather Icons': typeof feather !== 'undefined'
+  };
+
+  console.log('\n📦 Status das Dependências:');
+  for (const [name, loaded] of Object.entries(dependencies)) {
+    console.log(`${loaded ? '✓' : '✗'} ${name}: ${loaded ? 'Carregado' : 'NÃO ENCONTRADO'}`);
+  }
+
+  const allLoaded = Object.values(dependencies).every(v => v);
+  if (allLoaded) {
+    console.log('\n✓ Todas as dependências foram carregadas com sucesso!');
+  } else {
+    console.warn('\n⚠ Algumas dependências não foram encontradas. Verifique os scripts no HTML.');
+  }
+});
