@@ -924,23 +924,3 @@ async function limparTodosAgendamentos() {
     showError("Ocorreu um erro ao limpar a fila.");
   }
 }
-
-// ===================================================================
-// FUNÇÕES DE MODAL
-// ===================================================================
-
-function openModal(modalId) {
-  const modal = document.getElementById(modalId);
-  if (modal) modal.style.display = 'flex';
-}
-
-// ===================================================================
-// LOG DE INICIALIZAÇÃO
-// ===================================================================
-
-console.log(`
-╔════════════════════════════════════════╗
-║   🎬 AUTOPOST YOUTUBE DASHBOARD       ║
-║   ✅ Sistema inicializado              ║
-╚════════════════════════════════════════╝
-`);
