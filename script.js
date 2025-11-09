@@ -3,7 +3,8 @@
 // ===================================================================
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAUHcaB3L2oS9zQcPPVp_VKe356PS_ZE20", // Nova chave de API dedicada
+  // Chave original do Firebase para garantir que a autenticação funcione.
+  apiKey: "AIzaSyDrKMludQUfLS0j4tG-kEdkVksvSnZaIPQ", 
   authDomain: "autopost-477601.firebaseapp.com",
   projectId: "autopost-477601",
   storageBucket: "autopost-477601.firebasestorage.app",
@@ -12,7 +13,8 @@ const firebaseConfig = {
   measurementId: "G-X4SBER5XVP"
 };
 
-const GOOGLE_API_KEY = "AIzaSyAUHcaB3L2oS9zQcPPVp_VKe356PS_ZE20"; // Nova chave de API dedicada
+// Chave NOVA, dedicada APENAS para a API do Google (YouTube).
+const GOOGLE_API_KEY = "AIzaSyAUHcaB3L2oS9zQcPPVp_VKe356PS_ZE20"; 
 const GOOGLE_CLIENT_ID = "191333777971-7vjn3tn7t09tfhtf6mf0funjgibep2tf.apps.googleusercontent.com";
 const YOUTUBE_SCOPES = 'https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube';
 
@@ -46,7 +48,7 @@ function gisLoaded() {
     });
     gisReady = true;
     console.log("GIS client (Token Client) inicializado.");
-    checkGoogleApiReadiness(); // NOME CORRIGIDO
+    checkGoogleApiReadiness();
 }
 
 async function initializeGapiClient() {
@@ -57,7 +59,7 @@ async function initializeGapiClient() {
         } );
         gapiReady = true;
         console.log("GAPI client inicializado.");
-        checkGoogleApiReadiness(); // NOME CORRIGIDO
+        checkGoogleApiReadiness();
     } catch (err) {
         console.error("Erro ao inicializar GAPI client:", err);
         alert("Erro ao inicializar a integração com a API do YouTube. Verifique o console para detalhes.");
@@ -70,7 +72,7 @@ function checkGoogleApiReadiness() {
         const connectButton = document.getElementById('btn-connect-youtube');
         if (connectButton) {
             connectButton.disabled = false;
-            connectButton.innerHTML = `<i class="youtube-icon"></i> Conectar com o YouTube`;
+            connectButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-youtube" style="margin-right: 8px;"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon></svg> Conectar com o YouTube`;
         }
     }
 }
@@ -80,7 +82,7 @@ function checkGoogleApiReadiness() {
 // AUTENTICAÇÃO E GERENCIAMENTO DE PÁGINAS
 // ===================================================================
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', ( ) => {
     const loginPage = document.getElementById('login-page');
     const appContainer = document.querySelector('.container');
 
@@ -248,6 +250,9 @@ function solicitarAcessoYouTube() {
 
 async function buscarInfoCanalEAdicionar(accessToken) {
     try {
+        // Define o token para a GAPI usar nas chamadas autenticadas
+        gapi.client.setToken({ access_token: accessToken });
+
         const response = await gapi.client.youtube.channels.list({
             part: 'snippet',
             mine: true
@@ -272,6 +277,9 @@ async function buscarInfoCanalEAdicionar(accessToken) {
     } catch (error) {
         console.error("Erro ao buscar informações do canal:", error);
         alert("Ocorreu um erro ao adicionar o canal. Verifique o console.");
+    } finally {
+        // Limpa o token para a próxima solicitação não usar um token antigo
+        gapi.client.setToken(null);
     }
 }
 
