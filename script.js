@@ -1,12 +1,9 @@
 // ===================================================================
-// CONFIGURAÇÕES E INICIALIZAÇÃO
+// CONFIGURAÇÕES E INICIALIZAÇÃO (VERSÃO ESTÁVEL - SEM API DO GOOGLE)
 // ===================================================================
 
-// A ÚNICA CHAVE DE API CORRETA, VINDA DO FIREBASE CONSOLE, PARA TUDO.
-const SINGLE_API_KEY = "AIzaSyC-Vd4Vv-bMvDx2nIPC"; // A chave do seu firebaseConfig
-
 const firebaseConfig = {
-  apiKey: SINGLE_API_KEY, // Usa a chave única
+  apiKey: "AIzaSyC-Vd4Vv-bMvDx2nIPC", // A chave do seu firebaseConfig oficial
   authDomain: "autopost-477601.firebaseapp.com",
   projectId: "autopost-477601",
   storageBucket: "autopost-477601.appspot.com",
@@ -15,13 +12,8 @@ const firebaseConfig = {
   measurementId: "G-X4SBER5XVP"
 };
 
-// A constante da API do Google também usa a MESMA chave única.
-const GOOGLE_API_KEY = SINGLE_API_KEY; 
-const GOOGLE_CLIENT_ID = "191333777971-7vjn3tn7t09tfhtf6mf0funjgibep2tf.apps.googleusercontent.com";
-const YOUTUBE_SCOPES = 'https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube';
-
 // Inicializa o Firebase
-firebase.initializeApp(firebaseConfig );
+firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();
@@ -30,61 +22,12 @@ const storage = firebase.storage();
 let currentUser = null;
 let canalAtual = null;
 let agendamentosCache = [];
-let tokenClient;
-let gapiReady = false;
-let gisReady = false;
-
-// ===================================================================
-// FUNÇÕES DE CALLBACK DA API DO GOOGLE (TORNADAS GLOBAIS)
-// ===================================================================
-
-function gapiLoaded() {
-    gapi.load('client', initializeGapiClient);
-}
-
-function gisLoaded() {
-    tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: GOOGLE_CLIENT_ID,
-        scope: YOUTUBE_SCOPES,
-        callback: '', // O callback será definido dinamicamente
-    });
-    gisReady = true;
-    console.log("GIS client (Token Client) inicializado.");
-    checkGoogleApiReadiness();
-}
-
-async function initializeGapiClient() {
-    try {
-        await gapi.client.init({
-            apiKey: GOOGLE_API_KEY,
-            discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest'],
-        } );
-        gapiReady = true;
-        console.log("GAPI client inicializado.");
-        checkGoogleApiReadiness();
-    } catch (err) {
-        console.error("Erro ao inicializar GAPI client:", err);
-        alert("Erro ao inicializar a integração com a API do YouTube. Verifique o console para detalhes.");
-    }
-}
-
-function checkGoogleApiReadiness() {
-    if (gapiReady && gisReady) {
-        console.log("Ambas as bibliotecas do Google estão prontas. Habilitando botão.");
-        const connectButton = document.getElementById('btn-connect-youtube');
-        if (connectButton) {
-            connectButton.disabled = false;
-            connectButton.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-youtube" style="margin-right: 8px;"><path d="M22.54 6.42a2.78 2.78 0 0 0-1.94-2C18.88 4 12 4 12 4s-6.88 0-8.6.46a2.78 2.78 0 0 0-1.94 2A29 29 0 0 0 1 11.75a29 29 0 0 0 .46 5.33A2.78 2.78 0 0 0 3.4 19c1.72.46 8.6.46 8.6.46s6.88 0 8.6-.46a2.78 2.78 0 0 0 1.94-2 29 29 0 0 0 .46-5.25 29 29 0 0 0-.46-5.33z"></path><polygon points="9.75 15.02 15.5 11.75 9.75 8.48 9.75 15.02"></polygon></svg> Conectar com o YouTube`;
-        }
-    }
-}
-
 
 // ===================================================================
 // AUTENTICAÇÃO E GERENCIAMENTO DE PÁGINAS
 // ===================================================================
 
-document.addEventListener('DOMContentLoaded', ( ) => {
+document.addEventListener('DOMContentLoaded', () => {
     const loginPage = document.getElementById('login-page');
     const appContainer = document.querySelector('.container');
 
@@ -106,7 +49,15 @@ document.addEventListener('DOMContentLoaded', ( ) => {
     document.getElementById('login-form').addEventListener('submit', handleLogin);
     document.getElementById('btn-logout').addEventListener('click', handleLogout);
     document.getElementById('btn-add-channel').addEventListener('click', () => openModal('channel-modal'));
-    document.getElementById('btn-connect-youtube').addEventListener('click', solicitarAcessoYouTube);
+    
+    // BOTÃO DE CONEXÃO COM YOUTUBE DESATIVADO NESTA VERSÃO
+    const btnConnectYouTube = document.getElementById('btn-connect-youtube');
+    if (btnConnectYouTube) {
+        btnConnectYouTube.disabled = true;
+        btnConnectYouTube.innerHTML = 'Conexão Indisponível';
+        // Removido: .addEventListener('click', solicitarAcessoYouTube);
+    }
+    
     document.getElementById('btn-back-to-dashboard').addEventListener('click', () => mostrarPagina('dashboard'));
 
     // Navegação principal
@@ -190,7 +141,7 @@ function mostrarSubpagina(subpageId) {
 }
 
 // ===================================================================
-// GERENCIAMENTO DE CANAIS
+// GERENCIAMENTO DE CANAIS (VERSÃO SIMPLIFICADA SEM API)
 // ===================================================================
 
 async function carregarCanais() {
@@ -229,60 +180,13 @@ async function carregarCanais() {
     }
 }
 
-function solicitarAcessoYouTube() {
-    if (!gisReady || !gapiReady) {
-        alert("A integração com o Google ainda não está pronta. Por favor, aguarde um momento e tente novamente.");
-        return;
-    }
-
-    tokenClient.callback = async (resp) => {
-        if (resp.error !== undefined) {
-            throw (resp);
-        }
-        console.log("Token de acesso recebido.");
-        await buscarInfoCanalEAdicionar(resp.access_token);
-    };
-
-    if (gapi.client.getToken() === null) {
-        tokenClient.requestAccessToken({ prompt: 'consent' });
-    } else {
-        tokenClient.requestAccessToken({ prompt: '' });
-    }
-}
-
-async function buscarInfoCanalEAdicionar(accessToken) {
-    try {
-        // Define o token para a GAPI usar nas chamadas autenticadas
-        gapi.client.setToken({ access_token: accessToken });
-
-        const response = await gapi.client.youtube.channels.list({
-            part: 'snippet',
-            mine: true
-        });
-
-        if (response.result.items && response.result.items.length > 0) {
-            const channel = response.result.items[0];
-            const channelId = channel.id;
-            const channelName = channel.snippet.title;
-
-            await db.collection('usuarios').doc(currentUser.uid).collection('canais').doc(channelId).set({
-                nome: channelName,
-                dataCriacao: firebase.firestore.FieldValue.serverTimestamp()
-            });
-
-            alert(`Canal "${channelName}" adicionado com sucesso!`);
-            closeModal('channel-modal');
-            carregarCanais();
-        } else {
-            alert("Não foi possível encontrar um canal do YouTube associado a esta conta Google.");
-        }
-    } catch (error) {
-        console.error("Erro ao buscar informações do canal:", error);
-        alert("Ocorreu um erro ao adicionar o canal. Verifique o console.");
-    } finally {
-        // Limpa o token para a próxima solicitação não usar um token antigo
-        gapi.client.setToken(null);
-    }
+// FUNÇÃO DE ADICIONAR CANAL REMOVIDA/SIMPLIFICADA
+// A função abaixo é um placeholder e não conecta com o YouTube
+function handleAddChannel(e) {
+    e.preventDefault();
+    // Esta função está vazia de propósito nesta versão estável
+    alert("Funcionalidade de adicionar canal via API está temporariamente desativada para restaurar o login.");
+    closeModal('channel-modal');
 }
 
 
