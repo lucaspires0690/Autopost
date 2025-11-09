@@ -446,7 +446,7 @@ function switchTab(tabId) {
 }
 
 // ===================================================================
-// FUNÇÕES DE CANAL
+// FUNÇÕES DE CANAL - MODIFICADAS PARA SALVAR TOKENS
 // ===================================================================
 
 async function carregarCanais() {
@@ -515,7 +515,9 @@ function solicitarAcessoYouTube() {
       showError("Ocorreu um erro durante a autorização com o Google.");
       return;
     }
-    await buscarInfoCanalEAdicionar(resp.access_token);
+    
+    // IMPORTANTE: Passa o objeto completo da resposta com os tokens
+    await buscarInfoCanalEAdicionar(resp);
   };
 
   try {
@@ -526,9 +528,12 @@ function solicitarAcessoYouTube() {
   }
 }
 
-async function buscarInfoCanalEAdicionar(accessToken) {
+async function buscarInfoCanalEAdicionar(tokenResponse) {
   try {
-    gapi.client.setToken({ access_token: accessToken });
+    // Define o token de acesso
+    gapi.client.setToken({ access_token: tokenResponse.access_token });
+    
+    // Busca informações do canal
     const response = await gapi.client.youtube.channels.list({ 
       part: 'snippet', 
       mine: true 
@@ -539,6 +544,7 @@ async function buscarInfoCanalEAdicionar(accessToken) {
       const channelId = channel.id;
       const channelName = channel.snippet.title;
 
+      // Verifica se o canal já existe
       const canalExistente = await db.collection('usuarios')
         .doc(AppState.currentUser.uid)
         .collection('canais')
@@ -551,15 +557,26 @@ async function buscarInfoCanalEAdicionar(accessToken) {
         return;
       }
 
+      // CRÍTICO: Salva o canal COM os tokens OAuth
       await db.collection('usuarios')
         .doc(AppState.currentUser.uid)
         .collection('canais')
         .doc(channelId)
         .set({
           nome: channelName,
-          dataCriacao: firebase.firestore.FieldValue.serverTimestamp()
+          dataCriacao: firebase.firestore.FieldValue.serverTimestamp(),
+          // Salva os tokens OAuth para uso posterior pelas Cloud Functions
+          oauth: {
+            access_token: tokenResponse.access_token,
+            expires_in: tokenResponse.expires_in || 3600,
+            token_type: tokenResponse.token_type || "Bearer",
+            scope: tokenResponse.scope || YOUTUBE_SCOPES,
+            // Salva timestamp de quando o token foi criado
+            created_at: firebase.firestore.FieldValue.serverTimestamp()
+          }
         });
 
+      console.log("✅ Canal e tokens OAuth salvos com sucesso!");
       showSuccess(`Canal "${channelName}" adicionado com sucesso!`);
       closeModal('channel-modal');
       carregarCanais();
