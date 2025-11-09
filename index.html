@@ -1,238 +1,362 @@
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Autopost Dashboard</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+# 📋 Instruções de Implementação do Sistema
 
-    <!-- CORREÇÃO: Passando o callback como parâmetro de URL, o método moderno e garantido. -->
-    <script async defer src="https://apis.google.com/js/api.js?onload=gapiLoaded"></script>
-    <script async defer src="https://accounts.google.com/gsi/client?onload=gisLoaded"></script>
-</head>
-<body>
+## ⚠️ Problemas Corrigidos no JavaScript
 
-    <!-- Tela de Login -->
-    <div id="login-page" style="display: none;">
-        <div class="login-container">
-            <h2>Login Autopost</h2>
-            <form id="login-form">
-                <div class="form-group">
-                    <label for="login-email">E-mail</label>
-                    <input type="email" id="login-email" required>
-                </div>
-                <div class="form-group">
-                    <label for="login-password">Senha</label>
-                    <input type="password" id="login-password" required>
-                </div>
-                <button type="submit" class="btn btn-primary">Entrar</button>
-                <p id="login-error-message" class="error-message"></p>
-            </form>
+### 1. **Inicialização do Firebase**
+- ✅ Adicionada verificação se Firebase já está inicializado
+- ✅ Tratamento de erro na inicialização
+- ✅ Feedback visual se houver falha
+
+### 2. **APIs do Google (GAPI e GIS)**
+- ✅ Verificação de disponibilidade antes de usar
+- ✅ Callbacks globais implementados corretamente
+- ✅ Tratamento de erros em autorização
+
+### 3. **Validações de Dados**
+- ✅ Validação de e-mail no login
+- ✅ Validação de campos obrigatórios em formulários
+- ✅ Validação de datas e horários no CSV
+- ✅ Validação de tipos de arquivo no upload
+
+### 4. **Tratamento de Erros**
+- ✅ Try-catch em todas operações assíncronas
+- ✅ Mensagens de erro amigáveis ao usuário
+- ✅ Logs detalhados no console para debug
+
+### 5. **Segurança XSS**
+- ✅ Função `escapeHtml()` para prevenir injeção de código
+- ✅ Todos os dados do usuário são escapados antes de exibir
+
+### 6. **Escopo Global**
+- ✅ Funções necessárias expostas no `window` para onclick
+- ✅ Estado da aplicação centralizado em `AppState`
+
+### 7. **Limpeza de Recursos**
+- ✅ URLs de blob são revogados após uso
+- ✅ Inputs de arquivo são limpos após upload
+- ✅ Token do Google é removido após uso
+
+---
+
+## 📦 Scripts Necessários no HTML
+
+Adicione estas tags **ANTES** do seu script principal no `<head>` ou antes do `</body>`:
+
+```html
+<!-- Firebase v9 (compatibilidade) -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
+
+<!-- Google APIs -->
+<script async defer src="https://apis.google.com/js/api.js" onload="gapiLoaded()"></script>
+<script async defer src="https://accounts.google.com/gsi/client" onload="gisLoaded()"></script>
+
+<!-- PapaParse para CSV -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+
+<!-- Feather Icons -->
+<script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+
+<!-- SEU SCRIPT (deve vir por último) -->
+<script src="seu-script.js"></script>
+```
+
+---
+
+## 🔧 Estrutura HTML Mínima Necessária
+
+### Página de Login
+```html
+<div id="login-page">
+  <form id="login-form">
+    <input type="email" id="login-email" placeholder="E-mail" required>
+    <input type="password" id="login-password" placeholder="Senha" required>
+    <button type="submit">Entrar</button>
+    <div id="login-error-message"></div>
+  </form>
+</div>
+```
+
+### Container Principal
+```html
+<div class="container" style="display:none;">
+  <aside class="sidebar">
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item active" data-page="dashboard">Dashboard</a>
+      <a href="#" class="nav-item" data-page="channel-management">Gerenciar Canal</a>
+    </nav>
+    <button id="btn-logout">Sair</button>
+  </aside>
+
+  <main class="main-content">
+    <!-- Dashboard -->
+    <div id="dashboard-page" class="page active">
+      <h1>Meus Canais</h1>
+      <button id="btn-add-channel">Adicionar Canal</button>
+      <table id="channels-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nome</th>
+            <th>Data de Criação</th>
+            <th>Status</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <!-- Gerenciamento de Canal -->
+    <div id="channel-management-page" class="page">
+      <button id="btn-back-to-dashboard">← Voltar</button>
+      <h1 id="channel-management-title">Gerenciando Canal</h1>
+      
+      <aside class="channel-sidebar">
+        <nav>
+          <a href="#" class="channel-nav-item active" data-subpage="biblioteca">Biblioteca</a>
+          <a href="#" class="channel-nav-item" data-subpage="agendamento">Agendamentos</a>
+        </nav>
+      </aside>
+
+      <!-- Biblioteca -->
+      <div id="biblioteca-subpage" class="channel-page active">
+        <div class="tabs">
+          <button class="tab-button active" data-tab="videos">Vídeos</button>
+          <button class="tab-button" data-tab="thumbnails">Thumbnails</button>
         </div>
-    </div>
 
-    <!-- Container Principal da Aplicação -->
-    <div class="container" style="display: none;">
-        <aside class="sidebar">
-            <div class="sidebar-header">
-                <i data-feather="youtube" class="logo-icon"></i>
-                <h1>Autopost</h1>
-            </div>
-            <nav class="sidebar-nav">
-                <a href="#" class="nav-item active" data-page="dashboard"><i data-feather="home"></i> Dashboard</a>
-                <a href="#" class="nav-item" data-page="configuracoes"><i data-feather="settings"></i> Configurações</a>
-            </nav>
-            <div class="sidebar-footer">
-                <button id="btn-logout" class="nav-item"><i data-feather="log-out"></i> Sair</button>
-            </div>
-        </aside>
-
-        <main class="main-content">
-            <!-- Página do Dashboard Principal -->
-            <div id="dashboard-page" class="page active">
-                <header class="main-header">
-                    <h2>Canais</h2>
-                    <button id="btn-add-channel" class="btn btn-primary"><i data-feather="plus"></i> Adicionar Canal</button>
-                </header>
-                <div class="table-container">
-                    <table id="channels-table">
-                        <thead>
-                            <tr>
-                                <th>ID do Canal</th>
-                                <th>Nome do Canal</th>
-                                <th>Data de Criação</th>
-                                <th>Status</th>
-                                <th>Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <!-- Linhas dos canais serão inseridas aqui -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Página de Gerenciamento de Canal -->
-            <div id="channel-management-page" class="page">
-                <header class="main-header">
-                    <button id="btn-back-to-dashboard" class="btn btn-secondary"><i data-feather="arrow-left"></i> Voltar ao Dashboard</button>
-                    <h2 id="channel-management-title">Gerenciamento</h2>
-                </header>
-                <div class="channel-layout">
-                    <aside class="channel-sidebar">
-                        <a href="#" class="channel-nav-item active" data-subpage="biblioteca"><i data-feather="folder"></i> Biblioteca</a>
-                        <a href="#" class="channel-nav-item" data-subpage="agendamento"><i data-feather="calendar"></i> Agend. em Massa</a>
-                        <a href="#" class="channel-nav-item" data-subpage="estatisticas"><i data-feather="bar-chart-2"></i> Estatísticas</a>
-                    </aside>
-                    <div class="channel-content">
-                        <!-- Subpágina da Biblioteca -->
-                        <div id="biblioteca-subpage" class="channel-page active">
-                            <div class="subpage-header">
-                                <h3>Biblioteca de Mídia</h3>
-                                <div class="upload-buttons">
-                                    <button id="btn-upload-videos" class="btn btn-success"><i data-feather="video"></i> Upload de Vídeos</button>
-                                    <button id="btn-upload-thumbnails" class="btn btn-warning"><i data-feather="image"></i> Upload de Thumbnails</button>
-                                    <input type="file" id="video-file-input" multiple hidden accept="video/*">
-                                    <input type="file" id="thumbnail-file-input" multiple hidden accept="image/*">
-                                </div>
-                            </div>
-                            <div class="tabs-container">
-                                <div class="tab-buttons">
-                                    <button class="tab-button active" data-tab="videos">Vídeos</button>
-                                    <button class="tab-button" data-tab="thumbnails">Thumbnails</button>
-                                </div>
-                                <div id="videos-tab-content" class="tab-content active">
-                                    <div class="table-container">
-                                        <table id="videos-table">
-                                            <thead><tr><th>Nome do Arquivo</th><th>Status</th><th>Ações</th></tr></thead>
-                                            <tbody></tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                                <div id="thumbnails-tab-content" class="tab-content">
-                                    <div class="table-container">
-                                        <table id="thumbnails-table">
-                                            <thead><tr><th>Nome do Arquivo</th><th>Status</th><th>Ações</th></tr></thead>
-                                            <tbody></tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Subpágina de Agendamento em Massa -->
-                        <div id="agendamento-subpage" class="channel-page">
-                            <div class="subpage-header">
-                                <h3>Agendamento em Massa</h3>
-                            </div>
-                            <div class="import-section">
-                                <h4>Importar Planilha de Agendamento</h4>
-                                <p>Faça o upload de um arquivo .CSV com os dados dos vídeos a serem publicados. Baixe o modelo para garantir o formato correto.</p>
-                                <div class="import-buttons">
-                                    <button id="btn-download-csv-template" class="btn btn-secondary"><i data-feather="download"></i> Baixar Modelo</button>
-                                    <button id="btn-import-csv" class="btn btn-primary"><i data-feather="upload"></i> Importar Planilha (CSV )</button>
-                                    <input type="file" id="csv-file-input" hidden accept=".csv">
-                                </div>
-                                <div id="csv-status" class="log-box">Aguardando importação...</div>
-                            </div>
-                            <div class="schedule-list-section">
-                                <div class="subpage-header">
-                                    <h4>Fila de Agendamentos</h4>
-                                    <button id="btn-clear-schedules" class="btn btn-danger"><i data-feather="trash-2"></i> Limpar Fila</button>
-                                </div>
-                                <div class="table-container">
-                                    <table id="schedules-table">
-                                        <thead><tr><th>Título do Vídeo</th><th>Data de Publicação</th><th>Status</th><th>Ações</th></tr></thead>
-                                        <tbody></tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Subpágina de Estatísticas -->
-                        <div id="estatisticas-subpage" class="channel-page">
-                            <h3>Estatísticas</h3>
-                            <p>Em breve...</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Página de Configurações -->
-            <div id="configuracoes-page" class="page">
-                <header class="main-header">
-                    <h2>Configurações</h2>
-                </header>
-                <p>Configurações gerais da aplicação em breve...</p>
-            </div>
-        </main>
-    </div>
-
-    <!-- Modal para Adicionar/Editar Canal -->
-    <div id="channel-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-button" onclick="closeModal('channel-modal')">&times;</span>
-            <h3 id="modal-title">Conectar Novo Canal</h3>
-            <p>Para adicionar um novo canal, você precisa autorizar o Autopost a acessar sua conta do YouTube de forma segura.</p>
-              
-
-            <button id="btn-connect-youtube" class="btn btn-primary" style="width: 100%;" disabled>
-                Carregando...
-            </button>
+        <div id="videos-tab-content" class="tab-content active">
+          <button id="btn-upload-videos">Upload Vídeos</button>
+          <input type="file" id="video-file-input" accept="video/*" multiple hidden>
+          <table id="videos-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
         </div>
-    </div>
 
-    <!-- Modal para Editar Agendamento -->
-    <div id="schedule-modal" class="modal">
-        <div class="modal-content">
-            <span class="close-button" onclick="closeModal('schedule-modal')">&times;</span>
-            <h3>Editar Agendamento</h3>
-            <form id="schedule-form">
-                <input type="hidden" id="schedule-id-input">
-                <div class="form-group">
-                    <label for="schedule-nome-video">Nome do Vídeo (arquivo)</label>
-                    <input type="text" id="schedule-nome-video" required>
-                </div>
-                <div class="form-group">
-                    <label for="schedule-nome-thumbnail">Nome da Thumbnail (arquivo)</label>
-                    <input type="text" id="schedule-nome-thumbnail">
-                </div>
-                <div class="form-group">
-                    <label for="schedule-titulo">Título do Vídeo</label>
-                    <input type="text" id="schedule-titulo" required>
-                </div>
-                <div class="form-group">
-                    <label for="schedule-descricao">Descrição</label>
-                    <textarea id="schedule-descricao" rows="3"></textarea>
-                </div>
-                <div class="form-group">
-                    <label for="schedule-tags">Tags (separadas por vírgula)</label>
-                    <input type="text" id="schedule-tags">
-                </div>
-                <div class="form-group">
-                    <label for="schedule-data-publicacao">Data da Publicação</label>
-                    <input type="date" id="schedule-data-publicacao" required>
-                </div>
-                <div class="form-group">
-                    <label for="schedule-hora-publicacao">Hora da Publicação</label>
-                    <input type="time" id="schedule-hora-publicacao" required>
-                </div>
-                <button type="submit" class="btn btn-primary">Salvar Edição</button>
-            </form>
+        <div id="thumbnails-tab-content" class="tab-content">
+          <button id="btn-upload-thumbnails">Upload Thumbnails</button>
+          <input type="file" id="thumbnail-file-input" accept="image/*" multiple hidden>
+          <table id="thumbnails-table">
+            <thead>
+              <tr>
+                <th>Nome</th>
+                <th>Status</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
         </div>
-    </div>
+      </div>
 
-    <!-- Scripts do Firebase e bibliotecas -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
-    <script src="https://unpkg.com/papaparse@5.3.2/papaparse.min.js"></script>
-    <script src="https://unpkg.com/feather-icons"></script>
+      <!-- Agendamentos -->
+      <div id="agendamento-subpage" class="channel-page">
+        <button id="btn-download-csv-template">Baixar Modelo CSV</button>
+        <button id="btn-import-csv">Importar CSV</button>
+        <input type="file" id="csv-file-input" accept=".csv" hidden>
+        <button id="btn-clear-schedules">Limpar Todos</button>
+        
+        <div id="csv-status"></div>
+
+        <table id="schedules-table">
+          <thead>
+            <tr>
+              <th>Título</th>
+              <th>Data/Hora</th>
+              <th>Status</th>
+              <th>Ações</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+</div>
+```
+
+### Modais
+```html
+<!-- Modal: Adicionar Canal -->
+<div id="channel-modal" class="modal">
+  <div class="modal-content">
+    <span class="close-button">&times;</span>
+    <h2>Adicionar Canal do YouTube</h2>
+    <button id="btn-connect-youtube" disabled>Conectando...</button>
+  </div>
+</div>
+
+<!-- Modal: Editar Agendamento -->
+<div id="schedule-modal" class="modal">
+  <div class="modal-content">
+    <span class="close-button">&times;</span>
+    <h2>Editar Agendamento</h2>
+    <form id="schedule-form">
+      <input type="hidden" id="schedule-id-input">
+      
+      <label>Nome do Vídeo *</label>
+      <input type="text" id="schedule-nome-video" required>
+      
+      <label>Nome da Thumbnail</label>
+      <input type="text" id="schedule-nome-thumbnail">
+      
+      <label>Título *</label>
+      <input type="text" id="schedule-titulo" required>
+      
+      <label>Descrição</label>
+      <textarea id="schedule-descricao"></textarea>
+      
+      <label>Tags (separadas por |)</label>
+      <input type="text" id="schedule-tags" placeholder="tag1|tag2|tag3">
+      
+      <label>Data de Publicação *</label>
+      <input type="date" id="schedule-data-publicacao" required>
+      
+      <label>Hora de Publicação *</label>
+      <input type="time" id="schedule-hora-publicacao" required>
+      
+      <button type="submit">Salvar Alterações</button>
+    </form>
+  </div>
+</div>
+```
+
+---
+
+## 🎨 CSS Básico para Modais
+
+```css
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  justify-content: center;
+  align-items: center;
+}
+
+.modal-content {
+  background-color: white;
+  padding: 2rem;
+  border-radius: 8px;
+  max-width: 500px;
+  width: 90%;
+  position: relative;
+}
+
+.close-button {
+  position: absolute;
+  right: 1rem;
+  top: 1rem;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
+.page, .channel-page, .tab-content {
+  display: none;
+}
+
+.page.active, .channel-page.active, .tab-content.active {
+  display: block;
+}
+
+.status-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+.status-badge.active { background: #10b981; color: white; }
+.status-badge.uploaded { background: #3b82f6; color: white; }
+.status-badge.scheduled { background: #f59e0b; color: white; }
+
+#csv-status p.error { color: #ef4444; }
+#csv-status p.success { color: #10b981; }
+#csv-status p.info { color: #3b82f6; }
+```
+
+---
+
+## 🔒 Regras de Segurança do Firestore
+
+Configure no Firebase Console:
+
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Canais dos usuários
+    match /usuarios/{userId}/canais/{canalId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
     
-    <!-- Nosso script principal no final do body, onde é seguro -->
-    <script src="script.js"></script>
+    // Agendamentos
+    match /agendamentos/{agendamentoId} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
+```
 
-</body>
-</html>
+## 📁 Regras de Segurança do Storage
+
+```javascript
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{userId}/{canalId}/{folder}/{fileName} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+  }
+}
+```
+
+---
+
+## ✅ Checklist de Implementação
+
+- [ ] Scripts do Firebase adicionados no HTML
+- [ ] Scripts do Google (GAPI/GIS) adicionados
+- [ ] PapaParse adicionado
+- [ ] Feather Icons adicionado
+- [ ] Estrutura HTML completa
+- [ ] CSS básico implementado
+- [ ] Regras de segurança configuradas no Firebase
+- [ ] Autenticação habilitada no Firebase Console
+- [ ] Storage habilitado no Firebase Console
+- [ ] Firestore habilitado no Firebase Console
+
+---
+
+## 🐛 Debugging
+
+Abra o Console do navegador (F12) e verifique:
+
+1. **Erros de carregamento**: Todos os scripts devem carregar sem erros
+2. **Dependências**: O log mostrará quais bibliotecas foram carregadas
+3. **Erros de autenticação**: Mensagens claras aparecerão no console
+4. **Operações de banco**: Cada operação loga sucesso ou erro
+
+---
+
+## 📞 Suporte
+
+Se encontrar erros, verifique:
+- Console do navegador (F12 → Console)
+- Firebase Console → Authentication (usuário criado?)
+- Firebase Console → Firestore (regras configuradas?)
+- Firebase Console → Storage (regras configuradas?)
